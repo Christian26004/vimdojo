@@ -143,8 +143,7 @@ final class LessonsView extends JComponent {
                 g.setComposite(normal);
                 g.setFont(Theme.ui(14f));
                 g.setColor(t.sub());
-                g.drawString(lesson.isMix() ? "locked: pass lesson 1"
-                        : "locked: pass lesson " + i, bestX, baseline);
+                g.drawString("locked", bestX, baseline);
             } else if (efficiency.isPresent()) {
                 g.setFont(Theme.bold(15f));
                 g.setColor(t.text());

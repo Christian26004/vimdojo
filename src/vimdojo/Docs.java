@@ -12,7 +12,7 @@ import java.util.List;
  */
 final class Docs {
     /** The section that explains terms rather than keys. */
-    static final String TERMS = "start here: what the words mean";
+    static final String TERMS = "start here";
 
     /**
      * One documented key or term. The example starts from {@code start}, where {@code |} marks
@@ -161,11 +161,10 @@ final class Docs {
             "Lessons unlock one at a time. At first only lesson 1 can be played. When you "
                 + "finish a lesson with at least 50% efficiency, the next one unlocks, and every "
                 + "lesson you have unlocked stays that way.\n"
-                + "Locked lessons are greyed out, but you can still open them: their card shows "
-                + "the keys and plays the demonstration, faded, with a line saying which lesson "
-                + "to pass. Pressing `enter` on it says the same in the bottom bar instead of "
-                + "starting. The results screen tells you when a run has unlocked the next "
-                + "lesson.\n"
+                + "Locked lessons are greyed out, but you can still open them to see their keys "
+                + "and watch the demonstration. Pressing `enter` on one doesn't start it; the "
+                + "bottom bar says what it requires instead. The results screen tells you when "
+                + "a run has unlocked the next lesson.\n"
                 + "The two mixes unlock once you have passed lesson 1, and the random mix only "
                 + "uses unlocked lessons. Erasing your progress in settings locks everything "
                 + "after lesson 1 again."},

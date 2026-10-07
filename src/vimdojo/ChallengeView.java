@@ -251,12 +251,11 @@ final class ChallengeView extends JComponent {
 
         int y = top + keysTop;
         String note = lesson.isMix() ? app.introNote()
-                : app.run().guided() ? "First time through: each task says which keys to use."
-                : "Practice: random tasks, no instructions. `:guided` walks you through again.";
+                : app.run().guided() ? "" : "`:guided` for step-by-step help";
         if (locked) {
             g.setComposite(normal);
-            Paint.prose(g, app.lockedMessage(app.lessonIndex()) + ".", left, top + 106, 14f,
-                    t.accent());
+            Paint.prose(g, "Lesson " + (app.lessonIndex() + 1) + " is locked", left, top + 106,
+                    14f, t.accent());
             g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER,
                     0.4f));
         }

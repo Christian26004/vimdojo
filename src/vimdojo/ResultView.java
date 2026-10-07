@@ -206,9 +206,9 @@ final class ResultView extends JComponent {
                     && previousEfficiency.orElse(0) < App.PASS;
             g.setFont(justNow ? Theme.bold(15f) : Theme.ui(15f));
             g.setColor(justNow ? t.good() : t.sub());
-            g.drawString(justNow ? "Lesson " + (next + 1) + " is now unlocked."
-                    : open ? "" : "Reach " + Math.round(App.PASS) + "% efficiency to unlock lesson "
-                    + (next + 1) + ".", left, recapY + 66);
+            g.drawString(justNow ? "Lesson " + (next + 1) + " unlocked"
+                    : open ? "" : "Lesson " + (next + 1) + " requires " + Math.round(App.PASS)
+                    + "% or more", left, recapY + 66);
         }
 
         // What par looked like for each task, so a wasteful answer can be compared with it.

@@ -159,11 +159,11 @@ public final class NavTest {
         check(app.lessonIndex() == 1 && app.inIntro() && app.locked(),
                 "a locked lesson still opens, to look at");
         pressOn(view, KeyEvent.VK_ENTER);
-        check(app.inIntro() && app.message().startsWith("Lesson 2 is locked: reach 50%"),
+        check(app.inIntro() && app.message().equals("requires 50% or more on previous lesson"),
                 "but enter doesn't begin it: " + app.message());
         command(Integer.toString(random + 1));
         pressOn(view, KeyEvent.VK_ENTER);
-        check(app.inIntro() && app.message().startsWith("The mixes are locked"),
+        check(app.inIntro() && app.message().equals("requires 50% or more on lesson 1"),
                 "nor a mix");
         command("1");
         check(!app.locked(), "lesson 1 is never locked");

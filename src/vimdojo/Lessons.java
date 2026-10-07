@@ -1165,13 +1165,10 @@ final class Lessons {
             }, null),
 
         new Lesson("random", "random mix", Lesson.Kind.RANDOM_MIX, List.of(), null, null, null,
-            "Ten tasks, each from a lesson picked at random. No hints: the bar along the "
-                + "bottom shows the keys of the lesson each task comes from, and the rest is up "
-                + "to you."),
+            "Ten tasks from random lessons, no hints."),
 
         new Lesson("weak", "weak spots", Lesson.Kind.WEAK_SPOTS, List.of(), null, null, null,
-            "Ten tasks from the lessons you have tried, drawn most often from the ones where "
-                + "your recent efficiency is lowest. No hints."));
+            "Ten tasks from your weakest lessons, no hints."));
 
     /** The lessons proper, without the mixes. */
     static final List<Lesson> LESSONS = ALL.stream().filter(l -> !l.isMix()).toList();

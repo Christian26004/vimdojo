@@ -289,17 +289,10 @@ public final class App {
         return !unlocked(settings.lesson);
     }
 
-    /** What it takes to play a locked lesson. */
-    String lockedMessage(int index) {
-        int last = Math.max(0, Lessons.ALL.get(index).isMix() ? 0 : index - 1);
-        return (Lessons.ALL.get(index).isMix() ? "The mixes are" : "Lesson " + (index + 1)
-                + " is") + " locked: reach " + Math.round(PASS) + "% efficiency on lesson "
-                + (last + 1) + ", " + Lessons.ALL.get(last).title() + ", to play it";
-    }
-
     /** Called instead of beginning a locked lesson: says what it takes. */
     void refuseLocked() {
-        message = lockedMessage(settings.lesson);
+        message = "requires " + Math.round(PASS) + "% or more on "
+                + (Lessons.ALL.get(settings.lesson).isMix() ? "lesson 1" : "previous lesson");
         refresh();
     }
 
@@ -323,14 +316,13 @@ public final class App {
         }
         Map<String, Double> efficiency = history.recentEfficiency();
         if (efficiency.isEmpty()) {
-            return "Nothing to go on yet, so for now this is a random mix. Finish a lesson or two"
-                    + " and it will start to favour your weakest ones.";
+            return "Ten tasks from random lessons until you have some results.";
         }
         String weakest = efficiency.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue()).limit(3)
                 .map(e -> Lessons.byId(e.getKey()).title() + " " + Math.round(e.getValue()) + "%")
                 .collect(Collectors.joining(", "));
-        return lesson.note() + " Most often right now: " + weakest + ".";
+        return lesson.note() + " Right now: " + weakest + ".";
     }
 
     void finishRun() {
