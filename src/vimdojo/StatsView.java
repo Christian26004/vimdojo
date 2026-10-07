@@ -201,12 +201,13 @@ final class StatsView extends JComponent {
         FontMetrics fm = g.getFontMetrics();
         int plotX = x + 44;
         int plotW = w - 44 - 6;
-        // The scale stops at 100% unless a run shown here beat par; then its top is that run.
-        // Three lines only: the bottom, the top, and halfway between them.
+        // The scale stops at 100% unless a run shown here beat par; then it grows to the next
+        // multiple of 20, so the halfway line is a round number too. Three lines only: the
+        // bottom, the top, and halfway between them.
         double best = trend.stream().mapToDouble(Attempt::efficiency).max().orElse(0);
-        int top = best <= 100 ? 100 : (int) Math.ceil(best);
+        int top = best <= 100 ? 100 : (int) Math.ceil(best / 20) * 20;
         g.setStroke(new BasicStroke(1f));
-        for (int mark : new int[] {0, Math.round(top / 2f), top}) {
+        for (int mark : new int[] {0, top / 2, top}) {
             int gy = y + h - h * mark / top;
             g.setColor(t.panel());
             g.drawLine(plotX, gy, plotX + plotW, gy);
