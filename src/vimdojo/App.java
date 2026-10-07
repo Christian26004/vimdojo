@@ -58,22 +58,10 @@ public final class App {
         };
         root.setPreferredSize(new Dimension(1180, 720));
 
-        JPanel top = new JPanel(new BorderLayout()) {
-            @Override
-            public void paint(Graphics g) {
-                super.paint(g);
-                // With the docs open, the strip holding the logo dims along with the screen
-                // below it, so everything behind the docs reads as one background.
-                if (docsOpen() || replayOpen()) {
-                    g.setColor(DocsView.WASH);
-                    g.fillRect(0, 0, getWidth(), getHeight());
-                }
-            }
-        };
+        JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
         top.setBorder(BorderFactory.createEmptyBorder(20, 28, 0, 28));
         top.add(new Brand(() -> startLesson(settings.lesson)), BorderLayout.WEST);
-        root.add(top, BorderLayout.NORTH);
         root.add(new StatusBar(this), BorderLayout.SOUTH);
 
         deck.setOpaque(false);
@@ -82,6 +70,12 @@ public final class App {
         deck.add(lessonsView, "lessons");
         deck.add(statsView, "stats");
         deck.add(settingsView, "settings");
+        // The strip holding the logo sits in the same layer as the screens, so the docs and
+        // replays cover it too, and a click on it reaches them rather than the logo.
+        JPanel screen = new JPanel(new BorderLayout());
+        screen.setOpaque(false);
+        screen.add(top, BorderLayout.NORTH);
+        screen.add(deck, BorderLayout.CENTER);
         // The docs lie over whichever screen is showing, so the two share one space.
         JPanel stack = new JPanel() {
             @Override
@@ -93,7 +87,7 @@ public final class App {
         stack.setOpaque(false);
         stack.add(docsOverlay);
         stack.add(replayOverlay);
-        stack.add(deck);
+        stack.add(screen);
         root.add(stack, BorderLayout.CENTER);
 
         startLesson(settings.lesson);
