@@ -140,7 +140,7 @@ public final class App {
                             + "`k` and `enter`."),
             new Guide.Step(this::showStats, () -> page("stats"),
                     "Stats keeps your best efficiency and time for each lesson, and a calendar "
-                            + "of the days you practised."),
+                            + "of the days you practiced."),
             new Guide.Step(this::showSettings, () -> page("settings"),
                     "Settings holds the theme, the keyboard layout, and a way to erase your "
                             + "progress."),

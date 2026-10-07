@@ -161,7 +161,8 @@ final class Guide extends JComponent {
     private void paintBubble(Graphics2D g, Rectangle around, int w, int h) {
         Theme t = Theme.current();
         boolean last = index == steps.size() - 1;
-        List<String> lines = wrap(g, steps.get(index).text(), BUBBLE_WIDTH - 2 * BUBBLE_PAD);
+        List<String> lines = Paint.wrap(g, steps.get(index).text(), BUBBLE_WIDTH - 2 * BUBBLE_PAD,
+                SIZE);
         String hint = last ? "`enter` or click to start your first lesson"
                 : "`enter` or click to continue   `esc` skip";
         int bw = Math.min(BUBBLE_WIDTH, w - 32);
@@ -205,25 +206,6 @@ final class Guide extends JComponent {
             baseline += LINE;
         }
         Paint.prose(g, hint, x + BUBBLE_PAD, baseline + 14, 12.5f, t.sub());
-    }
-
-    /** Breaks text into lines that fit the width. Keycaps never contain spaces, so stay whole. */
-    private static List<String> wrap(Graphics2D g, String text, int width) {
-        List<String> lines = new ArrayList<>();
-        StringBuilder line = new StringBuilder();
-        for (String word : text.split(" ")) {
-            String longer = line.isEmpty() ? word : line + " " + word;
-            if (!line.isEmpty() && Paint.proseWidth(g, longer, SIZE) > width) {
-                lines.add(line.toString());
-                line.setLength(0);
-                line.append(word);
-            } else {
-                line.setLength(0);
-                line.append(longer);
-            }
-        }
-        lines.add(line.toString());
-        return lines;
     }
 
     /** A small blurred copy of what lies behind the tour. */

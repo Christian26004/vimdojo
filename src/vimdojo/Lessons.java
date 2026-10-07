@@ -562,98 +562,115 @@ final class Lessons {
 
     static final List<Lesson> ALL = List.of(
         new Lesson("hjkl", "moving around", List.of(
-                key("h", "left"), key("j", "down"), key("k", "up"), key("l", "right")),
+                key("h", "move the cursor one character left"),
+                key("j", "move the cursor down one line"),
+                key("k", "move the cursor up one line"),
+                key("l", "move the cursor one character right")),
             drill("move to the highlighted character", List.of(FOX, TOOLS, RENDER),
                 text -> BASIC, null, 2, 7)),
 
         new Lesson("words", "word by word", List.of(
-                key("w", "start of the next word"), key("b", "back to the start of a word"),
-                key("e", "end of the word")),
+                key("w", "jump to the start of the next word"),
+                key("b", "jump back to the start of a word"),
+                key("e", "jump to the end of a word")),
             drill("jump there by words", List.of(FOX, TOOLS, RENDER),
                 text -> WORD, text -> BASIC, 1, 4)),
 
         new Lesson("line", "ends of the line", List.of(
-                key("0", "start of the line"), key("^", "first character of the line"),
-                key("$", "end of the line")),
+                key("0", "jump to the very start of the line"),
+                key("^", "jump to the first non-space character"),
+                key("$", "jump to the end of the line")),
             drill("get there using the ends of the line", List.of(FOX, TOOLS, RENDER),
                 text -> LINE, text -> WORD, 1, 3)),
 
         new Lesson("jumps", "counts and big jumps", List.of(
-                key("gg", "first line"), key("G", "last line"),
-                key("7G", "line 7 - any number works"),
-                key("3j", "a number repeats a motion: 3j, 4w, 2b")),
+                key("gg", "jump to the first line"), key("G", "jump to the last line"),
+                key("7G", "jump to line 7 - any number works"),
+                key("3j", "a number first repeats a move: 3j, 4w")),
             drill("get there in as few keys as you can", List.of(PIPELINE),
                 Lessons::jumpMoves, text -> LINE, 1, 4)),
 
         new Lesson("find", "find a character", List.of(
-                key("fx", "onto the next x in the line"), key("tx", "just before the next x"),
-                key("F T", "the same, backward"), key(";", "repeat the find"),
-                key(",", "repeat it the other way")),
+                key("fx", "jump onto the next x in this line"),
+                key("tx", "jump to just before the next x"),
+                key("F T", "like f and t, but to the left"),
+                key(";", "repeat the last f, t, F or T"),
+                key(",", "repeat it in the opposite direction")),
             drill("find your way to the highlight", List.of(FOX, TOOLS, RENDER),
                 Lessons::findMoves, text -> LINE, 2, 3)),
 
         new Lesson("chars", "fixing characters", List.of(
                 key("x", "delete the character under the cursor"),
-                key("rx", "replace it with x"), key("u", "undo - works everywhere")),
+                key("rx", "replace the cursor's character with x"),
+                key("u", "undo the last change")),
             each(CHARS)),
 
         new Lesson("insert", "inserting text", List.of(
-                key("i", "insert before the cursor"), key("a", "append after the cursor"),
-                key("esc", "back to normal mode")),
+                key("i", "start typing before the cursor"),
+                key("a", "start typing after the cursor"),
+                key("esc", "stop typing: back to normal mode")),
             each(INSERT)),
 
         new Lesson("open", "inserting at the edges", List.of(
-                key("I", "insert at the start of the line"),
-                key("A", "append at the end of the line"),
-                key("o", "open a new line below"), key("O", "open a new line above")),
+                key("I", "start typing at the start of the line"),
+                key("A", "start typing at the end of the line"),
+                key("o", "add a line below and type on it"),
+                key("O", "add a line above and type on it")),
             each(OPEN)),
 
         new Lesson("delete", "the delete operator", List.of(
-                key("dw", "delete a word"), key("dd", "delete the line"),
-                key("D", "delete to the end of the line"),
-                key("d + motion", "delete wherever that motion goes: d0, dt), dG")),
+                key("dw", "delete from the cursor to the next word"),
+                key("dd", "delete the whole line"),
+                key("D", "delete from the cursor to the line's end"),
+                key("d + motion", "delete as far as a move goes: d0, dt)")),
             each(DELETE)),
 
         new Lesson("change", "the change operator", List.of(
-                key("cw", "change a word: delete it and start typing"),
-                key("cc", "change the whole line"),
-                key("C", "change to the end of the line"),
-                key("c + motion", "works like d, then leaves you in insert mode")),
+                key("cw", "delete to the word's end, then type"),
+                key("cc", "empty the line, then type it again"),
+                key("C", "delete to the line's end, then type"),
+                key("c + motion", "like d + motion, then start typing")),
             each(CHANGE)),
 
         new Lesson("put", "copy and paste", List.of(
-                key("yy", "yank (copy) the line"), key("yw", "yank a word"),
-                key("p", "put after the cursor"), key("P", "put before the cursor"),
-                key("dd p", "deleted text can be put back too")),
+                key("yy", "yank (copy) the whole line"),
+                key("yw", "yank from the cursor to the next word"),
+                key("p", "put (paste) after the cursor or below"),
+                key("P", "put before the cursor or above"),
+                key("dd p", "deleting copies too, so p puts it back")),
             each(PUT)),
 
         new Lesson("counts", "counts with operators", List.of(
                 key("d2w", "delete two words"), key("3dd", "delete three lines"),
-                key("c2w", "change two words"),
-                key("y3w", "any operator, count and motion combine")),
+                key("c2w", "replace two words with what you type"),
+                key("y3w", "operator, count and motion combine")),
             each(COUNTS)),
 
         new Lesson("objects", "text objects", List.of(
-                key("iw", "inner word - the word the cursor is in"),
-                key("aw", "a word, with its space"),
-                key("i\"", "inside the quotes"), key("i(", "inside the parentheses"),
-                key("d c y", "use them after an operator: ciw, di(, ya\"")),
+                key("iw", "the whole word the cursor is in"),
+                key("aw", "the word and the space after it"),
+                key("i\"", "the text inside the quotes"),
+                key("i(", "the text inside the brackets"),
+                key("d c y", "type one after an operator: ciw, di(")),
             each(OBJECTS)),
 
         new Lesson("repeat", "repeat and undo", List.of(
-                key(".", "repeat the last change"), key("u", "undo"),
-                key("ctrl-r", "redo")),
+                key(".", "do the last change again"), key("u", "undo the last change"),
+                key("ctrl-r", "redo what u undid")),
             each(REPEAT)),
 
         new Lesson("visual", "visual mode", List.of(
-                key("v", "select characters"), key("V", "select whole lines"),
-                key("motions", "grow the selection"),
-                key("d y c", "act on it"), key("esc", "cancel")),
+                key("v", "start selecting characters"),
+                key("V", "start selecting whole lines"),
+                key("motions", "move to grow or shrink the selection"),
+                key("d y c", "delete, copy or change the selection"),
+                key("esc", "stop selecting, change nothing")),
             each(VISUAL)),
 
         new Lesson("search", "searching", List.of(
                 key("/text", "then enter: jump to the next match"),
-                key("n", "next match"), key("N", "previous match")),
+                key("n", "jump to the next match"),
+                key("N", "jump to the previous match")),
             fixed(
                 Task.motion("search for `sort`: type `/sort` then enter",
                     PIPELINE, 0, 0, 4, 7, 6, "/sort<enter>"),

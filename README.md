@@ -93,8 +93,11 @@ Everything can be reached from the keyboard, the Vim way:
 | `j` `k` `gg` `G` | move within a list |
 | `h` `l` | previous or next lesson, from a lesson's introduction card |
 
-The docs read like a manual page: `/text` searches them, `n` and `N` move between matches, and
-`q`, `esc` or `:q` closes them without quitting the app.
+The docs read like a manual page, written for someone who has never used Vim: they open with
+the terms everything else relies on (mode, motion, operator, text object and so on), and each
+key's entry explains exactly what it does and what its example shows. `/text` searches them, `n`
+and `N` move between matches, `d` and `u` scroll a long entry, and `q`, `esc` or `:q` closes them
+without quitting the app.
 
 The settings screen lists these too, and holds the theme, the keyboard layout and an option to
 erase progress.

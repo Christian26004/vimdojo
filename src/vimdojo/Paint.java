@@ -82,6 +82,28 @@ final class Paint {
         return width;
     }
 
+    /**
+     * Breaks a sentence written for {@link #prose} into lines no wider than the width. Keycaps
+     * never contain spaces, so they are never split.
+     */
+    static java.util.List<String> wrap(Graphics2D g, String text, int width, float size) {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (String word : text.split(" ")) {
+            String longer = line.isEmpty() ? word : line + " " + word;
+            if (!line.isEmpty() && proseWidth(g, longer, size) > width) {
+                lines.add(line.toString());
+                line.setLength(0);
+                line.append(word);
+            } else {
+                line.setLength(0);
+                line.append(longer);
+            }
+        }
+        lines.add(line.toString());
+        return lines;
+    }
+
     static void centered(Graphics2D g, String text, int width, int baseline) {
         g.drawString(text, (width - g.getFontMetrics().stringWidth(text)) / 2, baseline);
     }

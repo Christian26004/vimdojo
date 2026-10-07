@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.event.KeyAdapter;
@@ -37,6 +38,9 @@ final class DocsView extends JComponent {
     private final List<String> typed = new ArrayList<>();
     private int selected;
     private int scroll;
+    // The right-hand side scrolls on its own when an entry is too long for the window.
+    private int detailScroll;
+    private int detailHeight;
     // The last search carried out, and the one being typed (null when none is).
     private String query = "";
     private String draft;
@@ -67,6 +71,8 @@ final class DocsView extends JComponent {
                     case 'k' -> select(selected - 1);
                     case ' ', 'f' -> select(selected + page());
                     case 'b' -> select(selected - page());
+                    case 'd' -> scrollDetail(1);
+                    case 'u' -> scrollDetail(-1);
                     case 'n' -> nextMatch(1);
                     case 'N' -> nextMatch(-1);
                     case 'q' -> app.closeDocs();
@@ -87,7 +93,12 @@ final class DocsView extends JComponent {
         };
         addMouseListener(mouse);
         addMouseWheelListener(e -> {
-            scroll = clamp(scroll + (int) Math.round(e.getPreciseWheelRotation() * ROW));
+            int amount = (int) Math.round(e.getPreciseWheelRotation() * ROW);
+            if (e.getX() > detailLeft() - 18) {
+                detailScroll = Math.max(0, detailScroll + amount);
+            } else {
+                scroll = clamp(scroll + amount);
+            }
             repaint();
         });
         new Timer(50, e -> {
@@ -146,6 +157,17 @@ final class DocsView extends JComponent {
         return selected;
     }
 
+    /** d and u: half a window down or up through the selected entry's text. */
+    private void scrollDetail(int direction) {
+        detailScroll = Math.max(0, detailScroll + direction * (getHeight() - TOP - BOTTOM) / 2);
+        repaint();
+    }
+
+    private int detailLeft() {
+        int width = Math.min(getWidth() - 40, 1000);
+        return Math.max(20, (getWidth() - width) / 2) + listWidth() + 36;
+    }
+
     private int page() {
         return Math.max(1, (getHeight() - TOP - BOTTOM) / ROW - 2);
     }
@@ -162,8 +184,8 @@ final class DocsView extends JComponent {
     // ---- search ----
 
     private static String searchable(Docs.Entry entry) {
-        return (entry.group() + " " + entry.key() + " " + entry.does() + " "
-                + String.join(" ", entry.more())).replace("`", "").toLowerCase();
+        return (entry.group() + " " + entry.key() + " " + entry.does() + " " + entry.explain()
+                + " " + String.join(" ", entry.more())).replace("`", "").toLowerCase();
     }
 
     /** Entries containing the text anywhere: key, description, notes or section name. */
@@ -220,6 +242,7 @@ final class DocsView extends JComponent {
 
     void select(int index) {
         selected = Math.max(0, Math.min(index, Docs.ALL.size() - 1));
+        detailScroll = 0;
         // Scroll just enough to keep the selection, and its heading if it has one, in view.
         int rowTop = offsetOf(selected);
         int visible = Math.max(ROW, getHeight() - TOP - BOTTOM);
@@ -350,8 +373,15 @@ final class DocsView extends JComponent {
                 clipped.fillRoundRect(left, y + 6, 4, ROW - 14, 4, 4);
             }
             int x = left + 14;
-            for (String key : entry.key().split("  ")) {
-                x += Paint.keycap(clipped, key, x, y + 19, 12f) + 5;
+            if (entry.isTerm()) {
+                clipped.setFont(Theme.bold(13.5f));
+                clipped.setColor(t.accent());
+                clipped.drawString(entry.key(), x, y + 19);
+                x += clipped.getFontMetrics().stringWidth(entry.key());
+            } else {
+                for (String key : entry.key().split("  ")) {
+                    x += Paint.keycap(clipped, key, x, y + 19, 12f) + 5;
+                }
             }
             clipped.setFont(i == selected ? Theme.bold(13.5f) : Theme.ui(13.5f));
             clipped.setColor(t.text());
@@ -380,44 +410,88 @@ final class DocsView extends JComponent {
         clipped.dispose();
     }
 
-    private void paintDetail(Graphics2D g, int x, int width) {
+    /**
+     * The selected entry: its name and description, the example playing, then the explanation
+     * and notes. Scrolls by itself when that is taller than the window.
+     */
+    private void paintDetail(Graphics2D g0, int x, int width) {
         Theme t = Theme.current();
         Docs.Entry entry = Docs.ALL.get(selected);
-        int y = TOP + 26;
-        Paint.label(g, "name", x, y);
+        int top = TOP + 26;
+        int bottom = getHeight() - BOTTOM;
+        Graphics2D g = (Graphics2D) g0.create();
+        g.clipRect(x - 6, TOP - 6, width + 12, bottom - TOP + 6);
+        int y = top - detailScroll;
+
+        Paint.label(g, entry.isTerm() ? "term" : "name", x, y);
         y += 46;
-        int keyX = x;
-        for (String key : entry.key().split("  ")) {
-            keyX += Paint.keycap(g, key, keyX, y, 24f) + 10;
+        if (entry.isTerm()) {
+            g.setFont(Theme.bold(24f));
+            g.setColor(t.text());
+            g.drawString(entry.key(), x, y);
+        } else {
+            int keyX = x;
+            for (String key : entry.key().split("  ")) {
+                keyX += Paint.keycap(g, key, keyX, y, 24f) + 10;
+            }
         }
         y += 40;
         // The full description, wrapped, since the list may have shortened it.
-        g.setFont(Theme.ui(17f));
-        g.setColor(t.text());
-        StringBuilder line = new StringBuilder();
-        for (String word : entry.does().split(" ")) {
-            if (!line.isEmpty() && g.getFontMetrics().stringWidth(line + " " + word) > width) {
-                g.drawString(line.toString(), x, y);
-                y += 26;
-                line.setLength(0);
-            }
-            line.append(line.isEmpty() ? "" : " ").append(word);
+        for (String line : Paint.wrap(g, entry.does(), width, 17f)) {
+            Paint.prose(g, line, x, y, 17f, t.text());
+            y += 26;
         }
-        g.drawString(line.toString(), x, y);
+        y += 18;
+
+        if (vim != null) {
+            y = paintExample(g, x, y, width) + 18;
+        }
+        if (!entry.explain().isEmpty()) {
+            Paint.label(g, "in detail", x, y);
+            y += 30;
+            for (String paragraph : entry.explain().split("\n")) {
+                for (String line : Paint.wrap(g, paragraph, width, 15f)) {
+                    Paint.prose(g, line, x, y, 15f, t.text());
+                    y += 23;
+                }
+                y += 11;
+            }
+            y += 14;
+        }
         if (!entry.more().isEmpty()) {
-            y += 40;
             Paint.label(g, "notes", x, y);
+            y += 28;
             for (String extra : entry.more()) {
-                y += 28;
-                Paint.prose(g, extra, x, y, 14f, t.text());
+                for (String line : Paint.wrap(g, extra, width, 14f)) {
+                    Paint.prose(g, line, x, y, 14f, t.text());
+                    y += 22;
+                }
+                y += 6;
             }
         }
-        y += 44;
+        g.dispose();
 
-        if (vim == null) {
-            return;
+        detailHeight = y + detailScroll - top;
+        int room = bottom - top;
+        int most = Math.max(0, detailHeight - room + 10);
+        if (detailScroll > most) {
+            detailScroll = most;
+            repaint();
         }
+        if (detailScroll < most) {
+            // More below: fade the text out and say how to reach the rest.
+            Color bg = t.bg();
+            g0.setPaint(new GradientPaint(0, bottom - 54, new Color(bg.getRed(), bg.getGreen(),
+                    bg.getBlue(), 0), 0, bottom - 22, bg));
+            g0.fillRect(x - 6, bottom - 54, width + 12, 54);
+            Paint.prose(g0, "more below: scroll or `d`", x, bottom - 6, 12.5f, t.sub());
+        }
+    }
 
+    /** The example's buffer and the keys pressed so far. Returns the y below them. */
+    private int paintExample(Graphics2D g, int x, int y, int width) {
+        Theme t = Theme.current();
+        Docs.Entry entry = Docs.ALL.get(selected);
         int labelWidth = Paint.label(g, "example", x, y);
         String mode = switch (vim.mode()) {
             case NORMAL -> "normal";
@@ -455,8 +529,8 @@ final class DocsView extends JComponent {
         small.dispose();
         y += panelHeight + 34;
 
-        // The keys pressed so far, the newest one outlined.
-        keyX = x;
+        // The keys pressed so far, the newest one outlined. Room is kept for one row of them.
+        int keyX = x;
         for (int i = 0; i < typed.size(); i++) {
             String name = typed.get(i);
             int keyWidth = Paint.keycapWidth(g, name, 13f);
@@ -472,5 +546,6 @@ final class DocsView extends JComponent {
             }
             keyX += keyWidth + 6;
         }
+        return y + 16;
     }
 }

@@ -137,7 +137,8 @@ final class StatusBar extends JPanel {
             g.setFont(Theme.ui(12.5f));
         }
         String hints = app.docsOpen()
-                ? "`/` search   `n` `N` next match   `q` close   `j` `k` move   `space` `b` page"
+                ? "`/` search   `n` `N` next match   `q` close   `j` `k` move   `d` `u` scroll text"
+                        + "   `space` `b` page"
                 : app.replayOpen() ? "`q` close   `j` `k` other tasks"
                 : switch (app.card()) {
             case "challenge" -> app.inIntro() ? "`enter` begin   `h` `l` other lessons"
