@@ -8,13 +8,19 @@ if exist dist\vimdojo rmdir /s /q dist\vimdojo
 mkdir out\package\classes
 mkdir out\package\jar
 
+rem Each step says what it is doing first, so a long one doesn't look like a hang.
+echo [1/4] Compiling the source...
 javac -d out\package\classes src\vimdojo\*.java || exit /b 1
+echo [2/4] Packing the jar...
 jar --create --file out\package\jar\vimdojo.jar --main-class vimdojo.App -C out\package\classes . || exit /b 1
+echo [3/4] Drawing the icon...
 java -Djava.awt.headless=true tools\Icon.java 256 out\package\vimdojo.ico || exit /b 1
 
+echo [4/4] Building the app and its Java runtime, which takes a minute...
 jpackage --type app-image --name vimdojo --app-version 1.0.0 ^
     --input out\package\jar --main-jar vimdojo.jar --main-class vimdojo.App ^
     --add-modules java.desktop --icon out\package\vimdojo.ico ^
     --dest dist || exit /b 1
 
-echo built dist\vimdojo\vimdojo.exe
+echo.
+echo Built dist\vimdojo\vimdojo.exe
