@@ -7,6 +7,9 @@ import java.awt.FlowLayout;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.swing.JPanel;
 
 /**
@@ -19,6 +22,7 @@ final class StatusBar extends JPanel {
 
     private final App app;
     private final JPanel links = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+    private final Map<String, Chip> chips = new LinkedHashMap<>();
 
     StatusBar(App app) {
         super(new BorderLayout());
@@ -26,12 +30,36 @@ final class StatusBar extends JPanel {
         setOpaque(false);
         setPreferredSize(new Dimension(10, HEIGHT));
         links.setOpaque(false);
-        links.add(new Chip(() -> "docs", app::docsOpen, app::toggleDocs));
-        links.add(new Chip(() -> "lessons", () -> app.card().equals("lessons"), app::showLessons));
-        links.add(new Chip(() -> "stats", () -> app.card().equals("stats"), app::showStats));
-        links.add(new Chip(() -> "settings", () -> app.card().equals("settings"),
+        chips.put("docs", new Chip(() -> "docs", app::docsOpen, app::toggleDocs));
+        chips.put("lessons", new Chip(() -> "lessons", () -> app.card().equals("lessons"),
+                app::showLessons));
+        chips.put("stats", new Chip(() -> "stats", () -> app.card().equals("stats"),
+                app::showStats));
+        chips.put("settings", new Chip(() -> "settings", () -> app.card().equals("settings"),
                 app::showSettings));
+        chips.values().forEach(links::add);
         add(links, BorderLayout.EAST);
+    }
+
+    // Where the parts of the bar are, for the tour to point at.
+
+    Rectangle modeArea() {
+        return new Rectangle(0, 0, MODE_WIDTH, getHeight());
+    }
+
+    Rectangle hintsArea() {
+        return new Rectangle(MODE_WIDTH, 0, Math.max(0, links.getX() - MODE_WIDTH), getHeight());
+    }
+
+    Rectangle linksArea() {
+        return links.getBounds();
+    }
+
+    /** The link to one screen, in this bar's coordinates. */
+    Rectangle linkArea(String name) {
+        Rectangle r = chips.get(name).getBounds();
+        r.translate(links.getX(), links.getY());
+        return r;
     }
 
     @Override

@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -45,6 +46,9 @@ final class ChallengeView extends JComponent {
     private int introOverflow;
     private int demoKey;
     private long demoNextAt;
+    // Where the introduction card last put its keys and its demonstration, for the tour.
+    private final Rectangle introKeys = new Rectangle();
+    private final Rectangle introDemo = new Rectangle();
 
     ChallengeView(App app) {
         this.app = app;
@@ -59,9 +63,7 @@ final class ChallengeView extends JComponent {
                     case KeyEvent.VK_BACK_SPACE -> feed(Vim.BACKSPACE);
                     case KeyEvent.VK_ENTER -> {
                         if (intro) {
-                            intro = false;
-                            app.run().shown(now());
-                            app.refresh();
+                            start();
                         } else {
                             feed(Vim.ENTER);
                         }
@@ -118,6 +120,23 @@ final class ChallengeView extends JComponent {
 
     boolean inIntro() {
         return intro;
+    }
+
+    /** Leaves the introduction card for the first task. */
+    void start() {
+        if (intro) {
+            intro = false;
+            app.run().shown(now());
+            app.refresh();
+        }
+    }
+
+    Rectangle introKeys() {
+        return new Rectangle(introKeys);
+    }
+
+    Rectangle introDemo() {
+        return new Rectangle(introDemo);
     }
 
     /** Show the introduction for the run the app has just created. */
@@ -185,6 +204,7 @@ final class ChallengeView extends JComponent {
         // sits in the same place whichever lesson is showing. With room, the demonstration goes
         // beside the keys; in a narrow window it goes underneath them.
         boolean wide = getWidth() >= INTRO_WIDTH + DEMO_WIDTH + 80;
+        introDemo.setBounds(0, 0, 0, 0);
         int rowHeight = wide ? INTRO_ROW_HEIGHT : 40;
         int keysTop = wide ? 136 : 124;
         int textHeight = keysTop + INTRO_ROWS * rowHeight;
@@ -240,6 +260,9 @@ final class ChallengeView extends JComponent {
             g.drawString(key.does(), left + INTRO_KEY_COLUMN, y);
             y += rowHeight;
         }
+        // y is now one row past the last key, or on the note's last line if there are no keys.
+        int bottom = (lesson.keys().isEmpty() ? y : y - rowHeight) + 16;
+        introKeys.setBounds(left, top - 4, INTRO_WIDTH - 40, bottom - (top - 4));
     }
 
     /**
@@ -352,6 +375,7 @@ final class ChallengeView extends JComponent {
         // The keys pressed so far for this task, the newest one outlined.
         int keyX = x;
         int keyY = bodyTop + (int) (size[1] * scale) + 34;
+        introDemo.setBounds(x, top - 4, DEMO_WIDTH - 20, keyY + 12 - (top - 4));
         for (int i = 0; i < demoTyped.size(); i++) {
             String name = demoTyped.get(i);
             int keyWidth = Paint.keycapWidth(g, name, 12.5f);

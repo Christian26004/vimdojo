@@ -5,6 +5,7 @@ import java.awt.CardLayout;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.KeyboardFocusManager;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +34,8 @@ public final class App {
     private final JComponent docsOverlay = docsView.overlay();
     private final ReplayView replayView = new ReplayView(this);
     private final JComponent replayOverlay = replayView.overlay();
+    private final StatusBar statusBar = new StatusBar(this);
+    private final Guide guide;
     // The screen underneath the docs, which gets the keyboard back when they close.
     private JComponent focused = challengeView;
     // Vim-style command line: non-null while a ":" command is being typed.
@@ -49,20 +52,19 @@ public final class App {
 
     public App() {
         Theme.select(settings.theme);
-        root = new JPanel(new BorderLayout()) {
+        JPanel body = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 g.setColor(Theme.current().bg());
                 g.fillRect(0, 0, getWidth(), getHeight());
             }
         };
-        root.setPreferredSize(new Dimension(1180, 720));
 
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
         top.setBorder(BorderFactory.createEmptyBorder(20, 28, 0, 28));
         top.add(new Brand(() -> startLesson(settings.lesson)), BorderLayout.WEST);
-        root.add(new StatusBar(this), BorderLayout.SOUTH);
+        body.add(statusBar, BorderLayout.SOUTH);
 
         deck.setOpaque(false);
         deck.add(challengeView, "challenge");
@@ -88,9 +90,114 @@ public final class App {
         stack.add(docsOverlay);
         stack.add(replayOverlay);
         stack.add(screen);
-        root.add(stack, BorderLayout.CENTER);
+        body.add(stack, BorderLayout.CENTER);
+
+        // The tour lies over everything, the status bar included.
+        guide = new Guide(body, tour(), () -> endTour(true), () -> endTour(false));
+        root = new JPanel() {
+            @Override
+            public boolean isOptimizedDrawingEnabled() {
+                return false;
+            }
+        };
+        root.setLayout(new OverlayLayout(root));
+        root.setPreferredSize(new Dimension(1180, 720));
+        root.add(guide);
+        root.add(body);
 
         startLesson(settings.lesson);
+        // Shown once, to someone who has never used the app.
+        if (!settings.finishedGuide && history.all().isEmpty()) {
+            guide.start();
+        }
+    }
+
+    /** The stops of the first-run tour, each pointing at part of the window. */
+    private List<Guide.Step> tour() {
+        return List.of(
+            new Guide.Step(this::showLesson, List::of,
+                    "Welcome to vimdojo. This short tour shows you around before your first "
+                            + "lesson."),
+            new Guide.Step(this::showLesson,
+                    () -> List.of(spot(challengeView, challengeView.introKeys())),
+                    "Each lesson starts on a card like this one, listing the keys it teaches."),
+            new Guide.Step(this::showLesson,
+                    () -> List.of(spot(challengeView, challengeView.introDemo())),
+                    "The demonstration solves the lesson's tasks one key at a time. "
+                            + "Then it's your turn, scored on keystrokes and time."),
+            new Guide.Step(this::showLesson,
+                    () -> List.of(spot(statusBar, statusBar.modeArea())),
+                    "This block shows Vim's current mode, like Vim's own status line."),
+            new Guide.Step(this::showLesson,
+                    () -> List.of(spot(statusBar, statusBar.hintsArea())),
+                    "Next to it are the keys that work on the screen you're on."),
+            new Guide.Step(this::showLesson,
+                    () -> List.of(spot(statusBar, statusBar.linksArea())),
+                    "These open the other screens. `gt` steps through them too, and `:` "
+                            + "starts a command, as in Vim."),
+            new Guide.Step(this::showLessons, () -> page("lessons"),
+                    "Lessons lists all " + Lessons.ALL.size() + " lessons. Pick one with `j` "
+                            + "`k` and `enter`."),
+            new Guide.Step(this::showStats, () -> page("stats"),
+                    "Stats keeps your best efficiency and time for each lesson, and a calendar "
+                            + "of the days you practised."),
+            new Guide.Step(this::showSettings, () -> page("settings"),
+                    "Settings holds the theme, the keyboard layout, and a way to erase your "
+                            + "progress."),
+            new Guide.Step(() -> {
+                if (!docsOpen()) {
+                    toggleDocs();
+                }
+            }, () -> List.of(exactly(docsView), spot(statusBar, statusBar.linkArea("docs"))),
+                    "The docs list every key and command, each with an example. Open them any "
+                            + "time with `:docs`."),
+            new Guide.Step(this::showLesson,
+                    () -> List.of(spot(challengeView, challengeView.introKeys()),
+                            spot(challengeView, challengeView.introDemo())),
+                    "That's the tour. `:tour` shows it again. Your first lesson is ready."));
+    }
+
+    /** A part of a component with a little room around it, in the window's coordinates. */
+    private Rectangle spot(JComponent in, Rectangle part) {
+        // Only what can be seen: in a short window the lesson card runs off the bottom.
+        Rectangle seen = part.intersection(in.getVisibleRect());
+        if (!in.isShowing() || seen.isEmpty()) {
+            return new Rectangle();
+        }
+        Rectangle r = SwingUtilities.convertRectangle(in, seen, root);
+        r.grow(8, 8);
+        return r;
+    }
+
+    /** All of a component, with no room around it, so nothing next to it shows through. */
+    private Rectangle exactly(JComponent in) {
+        return in.isShowing() ? SwingUtilities.convertRectangle(in,
+                new Rectangle(0, 0, in.getWidth(), in.getHeight()), root) : new Rectangle();
+    }
+
+    /** A screen and its link in the status bar. */
+    private List<Rectangle> page(String name) {
+        return List.of(exactly(deck), spot(statusBar, statusBar.linkArea(name)));
+    }
+
+    boolean guideOpen() {
+        return guide.active();
+    }
+
+    /** Which step of the tour is showing, counting from zero. */
+    int guideStep() {
+        return guide.step();
+    }
+
+    /** Closes the tour for good. Seeing it through starts the first lesson. */
+    private void endTour(boolean begin) {
+        settings.finishedGuide = true;
+        settings.save();
+        showLesson();
+        if (begin) {
+            challengeView.start();
+        }
+        root.repaint();
     }
 
     public JComponent root() {
@@ -267,6 +374,18 @@ public final class App {
      * the key was used here.
      */
     boolean globalKey(KeyEvent e) {
+        if (guide.active()) {
+            // The tour has the keyboard to itself.
+            if (e.getID() == KeyEvent.KEY_PRESSED) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_ENTER -> guide.next();
+                    case KeyEvent.VK_ESCAPE -> guide.skip();
+                    default -> {
+                    }
+                }
+            }
+            return true;
+        }
         if (command != null) {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 switch (e.getKeyCode()) {
@@ -406,6 +525,7 @@ public final class App {
         }
         switch (parts[0]) {
             case "docs", "doc" -> toggleDocs();
+            case "tour" -> guide.start();
             case "lessons", "ls" -> showLessons();
             case "stats" -> showStats();
             case "settings", "help", "h" -> showSettings();

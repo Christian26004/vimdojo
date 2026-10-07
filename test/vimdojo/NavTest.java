@@ -26,6 +26,9 @@ public final class NavTest {
         boolean[] quit = {false};
         app.quit = () -> quit[0] = true;
 
+        tour();
+        command("restart");
+
         check(app.card().equals("challenge") && app.inIntro() && app.lessonIndex() == 0,
                 "starts on the first lesson's introduction");
 
@@ -102,6 +105,34 @@ public final class NavTest {
         press(KeyEvent.VK_ENTER);
         check(quit[0], ":q quits");
 
+    }
+
+    private static void tour() {
+        check(app.guideOpen() && app.guideStep() == 0, "a first launch opens the tour");
+        type(":stats");
+        check(app.command() == null && app.card().equals("challenge"),
+                "other keys are held back during the tour");
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        int steps = 0;
+        while (app.guideOpen()) {
+            seen.add(app.docsOpen() ? "docs" : app.card());
+            press(KeyEvent.VK_ENTER);
+            steps++;
+            check(steps < 50, "the tour ends");
+        }
+        check(seen.equals(java.util.Set.of("challenge", "lessons", "stats", "settings", "docs")),
+                "the tour visits every screen, got " + seen);
+        check(app.card().equals("challenge") && !app.inIntro() && !app.docsOpen(),
+                "the end of the tour starts the first lesson");
+        check(Settings.load().finishedGuide, "finishing the tour is remembered");
+        App again = new App();
+        check(!again.guideOpen(), "the tour isn't shown a second time");
+
+        command("tour");
+        check(app.guideOpen() && app.guideStep() == 0, ":tour shows it again");
+        press(KeyEvent.VK_ENTER);
+        press(KeyEvent.VK_ESCAPE);
+        check(!app.guideOpen() && app.card().equals("challenge"), "escape skips the rest");
     }
 
     private static void dvorakLayout() {

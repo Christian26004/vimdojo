@@ -64,6 +64,9 @@ inside `run.bat` can be typed by hand.
 
 ## Using it
 
+- The first time it opens, a short tour points out each part of the window in turn, with the
+  rest blurred. Press **Enter** or click to move on, or **Esc** to skip it; it ends by starting
+  your first lesson. `:tour` shows it again.
 - Each lesson opens on an introduction card that lists its keys and plays a demonstration:
   the lesson's own tasks solved one key at a time, with each key shown as it is pressed.
 - **Enter** starts a lesson from its introduction card; **Tab** restarts it.
@@ -78,6 +81,7 @@ Everything can be reached from the keyboard, the Vim way:
 | Keys | What they do |
 | --- | --- |
 | `:docs` | the reference, over the current screen: every key, command, alias and mouse action, with a playable example for each Vim key |
+| `:tour` | the tour of the app shown on first launch |
 | `:lessons` `:stats` `:settings` | open that screen |
 | `:lesson` `:ready` | back to the lesson in progress |
 | `:next` `:prev` `:7` | another lesson, by direction or number |

@@ -14,6 +14,8 @@ final class Settings {
     int lesson;
     /** Typed text is converted from QWERTY to Dvorak, as Vim's keymap=dvorak does. */
     boolean dvorak;
+    /** The first-run tour has been seen to the end or skipped. */
+    boolean finishedGuide;
 
     private final Path file;
 
@@ -36,6 +38,7 @@ final class Settings {
                 p.load(in);
                 s.theme = p.getProperty("theme", s.theme);
                 s.dvorak = Boolean.parseBoolean(p.getProperty("dvorak"));
+                s.finishedGuide = Boolean.parseBoolean(p.getProperty("finished_guide"));
                 int lesson = Integer.parseInt(p.getProperty("lesson", "0"));
                 s.lesson = Math.max(0, Math.min(lesson, Lessons.ALL.size() - 1));
             } catch (IOException | IllegalArgumentException e) {
@@ -50,6 +53,7 @@ final class Settings {
         p.setProperty("theme", theme);
         p.setProperty("lesson", Integer.toString(lesson));
         p.setProperty("dvorak", Boolean.toString(dvorak));
+        p.setProperty("finished_guide", Boolean.toString(finishedGuide));
         try {
             Files.createDirectories(file.getParent());
             try (Writer out = Files.newBufferedWriter(file)) {
