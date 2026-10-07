@@ -111,9 +111,8 @@ final class EraseDialog extends JComponent {
 
         int w = Math.min(WIDTH, getWidth() - 40);
         int inner = w - PAD * 2;
-        List<String> warning = Paint.wrap(g, "Erasing data will revert all lesson progression: "
-                + "every result is deleted, and every lesson after the first locks again. This "
-                + "can't be undone.", inner, 15f);
+        List<String> warning = Paint.wrap(g, "Erasing data will revert all lesson progression. "
+                + "This can't be undone.", inner, 15f);
         int h = PAD + 30 + warning.size() * 23 + 24 + 22 + 30 + 46 + 28 + 40 + PAD - 8;
         int x = (getWidth() - w) / 2;
         int y = Math.max(12, (getHeight() - h) / 2);

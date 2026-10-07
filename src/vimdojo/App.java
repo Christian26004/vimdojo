@@ -382,6 +382,8 @@ public final class App {
     private void show(String name, JComponent focus) {
         card = name;
         focused = focus;
+        // A message belongs to the screen it was given on.
+        message = null;
         eraseDialog.setVisible(false);
         docsOverlay.setVisible(false);
         replayOverlay.setVisible(false);
@@ -399,6 +401,7 @@ public final class App {
         if (docsOpen()) {
             closeDocs();
         } else {
+            message = null;
             docsOverlay.setVisible(true);
             docsView.open();
             docsView.requestFocusInWindow();
@@ -426,6 +429,7 @@ public final class App {
         if (!card.equals("result")) {
             return;
         }
+        message = null;
         replayOverlay.setVisible(true);
         replayView.show(run, task);
         replayView.requestFocusInWindow();

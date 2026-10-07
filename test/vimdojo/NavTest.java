@@ -235,6 +235,8 @@ public final class NavTest {
         press(KeyEvent.VK_ENTER);
         check(!app.eraseOpen() && app.history().all().isEmpty()
                 && app.message().equals("Progress erased"), "the full location erases");
+        app.showLessons();
+        check(app.message() == null, "the message goes once another screen opens");
     }
 
     private static void dvorakLayout() {
