@@ -1231,13 +1231,16 @@ final class Lessons {
 
     // ---- the mixes ----
 
-    /** Ten practice tasks, each from a lesson picked at random, never the same one twice running. */
-    static List<Task> randomMix(Random r) {
+    /**
+     * Ten practice tasks, each from a lesson picked at random out of those given, never the same
+     * one twice running.
+     */
+    static List<Task> randomMix(Random r, List<Lesson> from) {
         List<Task> tasks = new ArrayList<>();
         Lesson last = null;
         while (tasks.size() < MIX_TASKS) {
-            Lesson lesson = LESSONS.get(r.nextInt(LESSONS.size()));
-            if (lesson != last) {
+            Lesson lesson = from.get(r.nextInt(from.size()));
+            if (lesson != last || from.size() == 1) {
                 tasks.add(lesson.one().apply(r));
                 last = lesson;
             }
@@ -1253,7 +1256,7 @@ final class Lessons {
     static List<Task> weakSpots(Random r, Map<String, Double> efficiency) {
         List<Lesson> tried = LESSONS.stream().filter(l -> efficiency.containsKey(l.id())).toList();
         if (tried.isEmpty()) {
-            return randomMix(r);
+            return randomMix(r, LESSONS);
         }
         double[] weights = tried.stream().mapToDouble(l -> weight(efficiency.get(l.id())))
                 .toArray();

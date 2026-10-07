@@ -11,8 +11,8 @@ import java.util.function.Function;
  * practice task, for the mixed runs to draw on.
  *
  * <p>The mixes have no keys or tasks of their own: the app builds their runs from the other
- * lessons (see {@link Lessons#randomMix} and {@link Lessons#weakSpots}), and their note
- * explains them on the introduction card.
+ * lessons (see {@link Lessons#randomMix(Random, List)} and {@link Lessons#weakSpots}), and
+ * their note explains them on the introduction card.
  */
 record Lesson(String id, String title, Kind kind, List<Key> keys,
               Function<Random, List<Task>> guided, Function<Random, List<Task>> practice,

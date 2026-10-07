@@ -146,9 +146,8 @@ final class SettingsView extends JComponent {
         if (selected < 2) {
             change(1);
         } else if (confirmErase) {
-            app.history().clear();
             confirmErase = false;
-            app.refresh();
+            app.eraseProgress();
         } else if (!app.history().all().isEmpty()) {
             // Erasing can't be undone, so it takes a second press.
             confirmErase = true;

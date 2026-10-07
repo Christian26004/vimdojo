@@ -128,7 +128,7 @@ final class ResultView extends JComponent {
         int tasks = run.tasks().size();
         int columns = width >= 820 ? 2 : 1;
         int solutionRows = (tasks + columns - 1) / columns;
-        int total = 392 + solutionRows * SOLUTION_ROW + 6;
+        int total = 416 + solutionRows * SOLUTION_ROW + 6;
         overflow = Math.max(0, total + 16 - getHeight());
         scroll = Math.min(scroll, overflow);
         int top = overflow > 0 ? 8 - scroll : (getHeight() - total) / 2;
@@ -198,8 +198,21 @@ final class ResultView extends JComponent {
         }
         g.drawString(best, left, recapY + 40);
 
+        // Whether this run opened the next lesson, or what it still takes.
+        int next = app.lessonIndex() + 1;
+        if (!run.lesson().isMix() && next < Lessons.LESSONS.size()) {
+            boolean open = app.unlocked(next);
+            boolean justNow = open && attempt.efficiency() >= App.PASS
+                    && previousEfficiency.orElse(0) < App.PASS;
+            g.setFont(justNow ? Theme.bold(15f) : Theme.ui(15f));
+            g.setColor(justNow ? t.good() : t.sub());
+            g.drawString(justNow ? "Lesson " + (next + 1) + " is now open."
+                    : open ? "" : "Reach " + Math.round(App.PASS) + "% efficiency to open lesson "
+                    + (next + 1) + ".", left, recapY + 66);
+        }
+
         // What par looked like for each task, so a wasteful answer can be compared with it.
-        int solutionsTop = recapY + 84;
+        int solutionsTop = recapY + 108;
         int labelEnd = left + Paint.label(g, "par for each task", left, solutionsTop);
         g.setFont(Theme.ui(12f));
         g.setColor(t.sub());

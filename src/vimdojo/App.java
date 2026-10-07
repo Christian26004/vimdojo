@@ -48,6 +48,8 @@ public final class App {
     private boolean awaitingG;
     private final JPanel root;
     private Run run;
+    /** The efficiency, in percent, a lesson needs before the next one opens. */
+    static final double PASS = 50;
     /** What :q does; replaceable so tests don't end the JVM. */
     Runnable quit = () -> System.exit(0);
     private String card = "challenge";
@@ -107,7 +109,8 @@ public final class App {
         root.add(guide);
         root.add(body);
 
-        startLesson(settings.lesson);
+        // A lesson left open last time may have been locked since, by erasing progress.
+        startLesson(unlocked(settings.lesson) ? settings.lesson : frontier());
         // Shown once, to someone who has never used the app.
         if (!settings.finishedGuide && history.all().isEmpty()) {
             guide.start();
@@ -241,18 +244,66 @@ public final class App {
      * their tasks from the other lessons.
      */
     void startLesson(int index, boolean guide) {
-        settings.lesson = Math.max(0, Math.min(index, Lessons.ALL.size() - 1));
+        index = Math.max(0, Math.min(index, Lessons.ALL.size() - 1));
+        if (!unlocked(index)) {
+            message = lockedMessage(index);
+            refresh();
+            return;
+        }
+        prepare(index, guide);
+        show("challenge", challengeView);
+    }
+
+    /** Makes the run for a lesson without changing screen. */
+    private void prepare(int index, boolean guide) {
+        settings.lesson = index;
         settings.save();
         Lesson lesson = Lessons.ALL.get(settings.lesson);
         boolean guided = !lesson.isMix() && (guide || history.runs(lesson.id()) == 0);
         List<Task> tasks = switch (lesson.kind()) {
-            case RANDOM_MIX -> Lessons.randomMix(random);
+            case RANDOM_MIX -> Lessons.randomMix(random,
+                    Lessons.LESSONS.subList(0, frontier() + 1));
             case WEAK_SPOTS -> Lessons.weakSpots(random, history.recentEfficiency());
             case LESSON -> (guided ? lesson.guided() : lesson.practice()).apply(random);
         };
         run = new Run(lesson, tasks, guided);
         challengeView.begin();
-        show("challenge", challengeView);
+    }
+
+    /**
+     * The furthest lesson open to you: one past the furthest you have passed, by scoring at
+     * least {@link #PASS}% on it. Every lesson up to it is open; the ones after it are locked.
+     */
+    int frontier() {
+        int frontier = 0;
+        for (int i = 0; i < Lessons.LESSONS.size(); i++) {
+            if (history.bestEfficiency(Lessons.LESSONS.get(i).id()).orElse(0) >= PASS) {
+                frontier = Math.max(frontier, i + 1);
+            }
+        }
+        return Math.min(frontier, Lessons.LESSONS.size() - 1);
+    }
+
+    /** Lessons up to the frontier are open; the mixes open once there are two to mix. */
+    boolean unlocked(int index) {
+        return Lessons.ALL.get(index).isMix() ? frontier() >= 1 : index <= frontier();
+    }
+
+    private String lockedMessage(int index) {
+        Lesson next = Lessons.ALL.get(frontier());
+        String pass = "reach " + Math.round(PASS) + "% efficiency on lesson " + (frontier() + 1)
+                + ", " + next.title();
+        return Lessons.ALL.get(index).isMix() ? "The mixes are locked: " + pass + " first"
+                : "Lesson " + (index + 1) + " is locked: " + pass + " to open the next one";
+    }
+
+    /** Erases every result, which locks the lessons again. */
+    void eraseProgress() {
+        history.clear();
+        if (!unlocked(settings.lesson)) {
+            prepare(0, false);
+        }
+        refresh();
     }
 
     /**

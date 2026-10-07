@@ -25,7 +25,8 @@ public final class LessonTest {
     private static List<List<Task>> runsOf(Lesson lesson, Random random) {
         return switch (lesson.kind()) {
             case LESSON -> List.of(lesson.guided().apply(random), lesson.practice().apply(random));
-            case RANDOM_MIX -> List.of(Lessons.randomMix(random));
+            case RANDOM_MIX -> List.of(Lessons.randomMix(random, Lessons.LESSONS),
+                    Lessons.randomMix(random, Lessons.LESSONS.subList(0, 2)));
             case WEAK_SPOTS -> List.of(Lessons.weakSpots(random, Map.of("hjkl", 40.0,
                     "objects", 90.0, "search", 120.0)), Lessons.weakSpots(random, Map.of()));
         };
@@ -107,7 +108,7 @@ public final class LessonTest {
     private static void mixes() {
         Set<String> from = new HashSet<>();
         for (int seed = 0; seed < 20; seed++) {
-            List<Task> tasks = Lessons.randomMix(new Random(seed));
+            List<Task> tasks = Lessons.randomMix(new Random(seed), Lessons.LESSONS);
             for (int i = 1; i < tasks.size(); i++) {
                 check(!tasks.get(i).lesson().equals(tasks.get(i - 1).lesson()),
                         "the random mix never repeats a lesson twice running");
@@ -116,6 +117,13 @@ public final class LessonTest {
         }
         check(from.size() == Lessons.LESSONS.size(), "the random mix reaches every lesson, got "
                 + from.size());
+        // With only the first lessons open, it keeps to them.
+        List<Lesson> open = Lessons.LESSONS.subList(0, 3);
+        for (int seed = 0; seed < 20; seed++) {
+            check(Lessons.randomMix(new Random(seed), open).stream()
+                    .allMatch(t -> open.contains(Lessons.byId(t.lesson()))),
+                    "the random mix only uses the lessons it is given");
+        }
 
         Map<String, Double> efficiency = Map.of("hjkl", 45.0, "words", 95.0, "change", 120.0);
         Map<String, Integer> counts = new java.util.HashMap<>();

@@ -103,9 +103,14 @@ final class LessonsView extends JComponent {
         Paint.label(g, "best", bestX, 26);
 
         g.clipRect(0, TOP - 4, getWidth(), getHeight() - TOP + 4);
+        java.awt.Composite normal = g.getComposite();
         for (int i = 0; i < Lessons.ALL.size(); i++) {
             Lesson lesson = Lessons.ALL.get(i);
             int y = TOP + i * ROW - scroll;
+            // Lessons not yet open are greyed out, all but their number and what opens them.
+            boolean locked = !app.unlocked(i);
+            g.setComposite(locked ? java.awt.AlphaComposite.getInstance(
+                    java.awt.AlphaComposite.SRC_OVER, 0.35f) : normal);
             if (i == selected) {
                 Paint.panel(g, left, y, width, ROW - 2);
                 g.setColor(t.accent());
@@ -134,7 +139,13 @@ final class LessonsView extends JComponent {
             }
 
             OptionalDouble efficiency = app.history().bestEfficiency(lesson.id());
-            if (efficiency.isPresent()) {
+            if (locked) {
+                g.setComposite(normal);
+                g.setFont(Theme.ui(14f));
+                g.setColor(t.sub());
+                g.drawString(lesson.isMix() ? "locked: pass lesson 1"
+                        : "locked: pass lesson " + i, bestX, baseline);
+            } else if (efficiency.isPresent()) {
                 g.setFont(Theme.bold(15f));
                 g.setColor(t.text());
                 g.drawString(Math.round(efficiency.getAsDouble()) + "%", bestX, baseline);
@@ -148,5 +159,6 @@ final class LessonsView extends JComponent {
                 g.drawString("not tried yet", bestX, baseline);
             }
         }
+        g.setComposite(normal);
     }
 }

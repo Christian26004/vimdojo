@@ -72,6 +72,9 @@ inside `run.bat` can be typed by hand.
 - The first run of a lesson is **guided**: each task says exactly which keys to use. Every run
   after that is **practice**: tasks drawn at random from the lesson, saying only what to do,
   with the lesson's keys listed along the bottom. `:guided` brings the guided version back.
+- Lessons open one at a time. Only lesson 1 is open at first; scoring at least **50%
+  efficiency** on a lesson opens the next one. Lessons not open yet are greyed out in the list,
+  and the results screen says when the next one opens. Erasing your progress locks them again.
 - At the end of the list, **random mix** gives ten tasks from lessons picked at random, and
   **weak spots** ten from the lessons you have tried, most often the ones where your recent
   efficiency is lowest.

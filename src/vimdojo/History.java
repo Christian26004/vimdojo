@@ -151,6 +151,9 @@ final class History {
     }
 
     private static void append(Path file, List<String> lines) {
+        if (lines.isEmpty()) {
+            return;
+        }
         try {
             Files.createDirectories(file.getParent());
             Files.writeString(file, String.join(System.lineSeparator(), lines)

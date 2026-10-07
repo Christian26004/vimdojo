@@ -28,6 +28,7 @@ public final class NavTest {
 
         tour();
         command("restart");
+        locking();
 
         check(app.card().equals("challenge") && app.inIntro() && app.lessonIndex() == 0,
                 "starts on the first lesson's introduction");
@@ -133,6 +134,46 @@ public final class NavTest {
         press(KeyEvent.VK_ENTER);
         press(KeyEvent.VK_ESCAPE);
         check(!app.guideOpen() && app.card().equals("challenge"), "escape skips the rest");
+    }
+
+    /** Lessons open one at a time, each at 50% on the one before; erasing locks them again. */
+    private static void locking() {
+        int random = Lessons.indexOf("random");
+        check(app.unlocked(0) && !app.unlocked(1) && !app.unlocked(random),
+                "a new user starts with only lesson 1 open");
+        command("2");
+        check(app.lessonIndex() == 0 && app.message().startsWith("Lesson 2 is locked"),
+                ":2 is refused: " + app.message());
+        command("next");
+        check(app.lessonIndex() == 0 && app.message().startsWith("Lesson 2 is locked"),
+                ":next is refused");
+        command(Integer.toString(random + 1));
+        check(app.lessonIndex() == 0 && app.message().startsWith("The mixes are locked"),
+                "so are the mixes");
+
+        app.history().add(new Attempt(1L, "hjkl", 10, 100, 40, 8), java.util.List.of());
+        check(!app.unlocked(1), "40% is not enough");
+        app.history().add(new Attempt(2L, "hjkl", 10, 100, 50, 8), java.util.List.of());
+        check(app.unlocked(1) && !app.unlocked(2) && app.unlocked(random),
+                "50% opens lesson 2 and the mixes, and nothing further");
+        command("2");
+        check(app.lessonIndex() == 1, "lesson 2 opens");
+        command("prev");
+        check(app.lessonIndex() == 0, "earlier lessons stay open");
+
+        command("2");
+        app.eraseProgress();
+        check(!app.unlocked(1) && app.lessonIndex() == 0,
+                "erasing locks the lessons again and goes back to lesson 1");
+
+        // Open everything for the checks that follow.
+        for (Lesson lesson : Lessons.LESSONS) {
+            app.history().add(new Attempt(3L, lesson.id(), 10, 8, 8, 8), java.util.List.of());
+        }
+        for (int i = 0; i < Lessons.ALL.size(); i++) {
+            check(app.unlocked(i), "passing every lesson opens " + Lessons.ALL.get(i).id());
+        }
+        command("1");
     }
 
     private static void dvorakLayout() {
@@ -279,6 +320,7 @@ public final class NavTest {
 
     /** Steps every lesson's demonstration far enough to loop, painting as it goes. */
     private static void demonstrations() {
+        int recorded = app.history().all().size();
         ChallengeView view = null;
         java.util.ArrayDeque<java.awt.Component> queue = new java.util.ArrayDeque<>();
         queue.add(app.root());
@@ -305,7 +347,7 @@ public final class NavTest {
             check(app.inIntro() && app.run().index() == 0,
                     "the demonstration leaves the real lesson untouched");
         }
-        check(app.history().all().isEmpty(), "demonstrations are never recorded");
+        check(app.history().all().size() == recorded, "demonstrations are never recorded");
         g.dispose();
     }
 
