@@ -782,8 +782,9 @@ final class Docs {
         {"commands", ":settings", "theme, layout, data folder, erase progress",
             "Opens the settings: the color theme, the keyboard layout, where your data is "
                 + "kept, and a button to erase all your results.\n"
-                + "Data folder moves your settings and results to another folder you type, "
-                + "such as a synced one; a leading ~ means your home folder.\n"
+                + "Data folder opens your system's folder chooser. Pick a folder, such as a "
+                + "synced one, and your settings and results move into a .vimdojo folder "
+                + "inside it.\n"
                 + "Erasing can't be undone, so it opens a box asking you to type the location "
                 + "of your vimdojo data, such as ~/.vimdojo, before it goes ahead.",
             "`:set` `:help` `:h` open it too"},

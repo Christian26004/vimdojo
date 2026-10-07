@@ -7,6 +7,7 @@ import java.awt.Graphics;
 import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -322,21 +323,22 @@ public final class App {
                 }));
     }
 
-    /** Asks where to move the data folder to, starting from where it is now. */
+    /**
+     * Opens the system's folder chooser, starting where the data is now, and moves the data
+     * into a .vimdojo folder inside whichever folder is picked.
+     */
     void askToMove() {
-        String folder = DataFolder.shown();
-        dialog.open(new Dialog.Spec("move", "Move your data",
-                "Your settings and results are kept in " + folder + ". Type another folder and"
-                        + " they will move there, and stay there from now on.",
-                "New folder:", null, folder, "Move",
-                text -> !text.isBlank() && !DataFolder.current().equals(DataFolder.parse(text)),
-                text -> {
-                    String problem = DataFolder.move(text);
-                    if (problem == null) {
-                        message = "Data moved to " + DataFolder.shown();
-                    }
-                    return problem;
-                }));
+        Path picked = FolderPicker.choose(root, DataFolder.current().getParent());
+        if (picked != null) {
+            moveData(picked);
+        }
+    }
+
+    /** Moves the data into a .vimdojo folder inside the one given, saying how it went. */
+    void moveData(Path picked) {
+        String problem = DataFolder.move(DataFolder.inside(picked));
+        message = problem != null ? problem : "Data moved to " + DataFolder.shown();
+        refresh();
     }
 
     boolean dialogOpen() {
@@ -516,6 +518,10 @@ public final class App {
      * the key was used here.
      */
     boolean globalKey(KeyEvent e) {
+        // Keys typed in another window, such as the folder chooser, are that window's own.
+        if (SwingUtilities.getWindowAncestor(e.getComponent()) instanceof java.awt.Dialog) {
+            return false;
+        }
         if (guide.active()) {
             // The tour has the keyboard to itself.
             if (e.getID() == KeyEvent.KEY_PRESSED) {

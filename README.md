@@ -138,8 +138,9 @@ Results and settings are plain text files in a `.vimdojo` folder in your home di
 `~/.vimdojo` on macOS, `C:\Users\<you>\.vimdojo` on Windows. Delete the folder to start fresh.
 
 To keep them somewhere else, for example a synced folder, choose **Data folder** in settings
-and type the new location; the files move there. vimdojo then remembers the place in a
-one-line file, `~/.vimdojo-location`, which goes away again if you move the folder back home.
+and pick a folder in the window that opens: a `.vimdojo` folder is made inside it and your
+files move there. vimdojo then remembers the place in a one-line file, `~/.vimdojo-location`,
+which goes away again if you move the folder back to your home folder.
 
 ## Tests
 

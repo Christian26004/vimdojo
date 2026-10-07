@@ -240,55 +240,29 @@ public final class NavTest {
         moveFolder();
     }
 
-    /** The data folder can be moved by typing a new place; everything goes with it. */
+    /** The data folder moves into a picked folder, as .vimdojo; everything goes with it. */
     private static void moveFolder() {
         java.nio.file.Path from = DataFolder.current();
-        java.nio.file.Path to = from.resolveSibling(from.getFileName() + "-moved");
+        java.nio.file.Path picked = from.resolveSibling(from.getFileName() + "-picked");
+        java.nio.file.Path to = picked.resolve(".vimdojo");
         app.setTheme("moss");
         check(java.nio.file.Files.exists(from.resolve("settings.properties")), "settings saved");
 
-        app.askToMove();
-        check(app.dialogOpen() && app.dialogMode().equals("move")
-                && app.dialogTyped().equals(DataFolder.shown()),
-                "the move dialog starts from where the folder is now");
-        press(KeyEvent.VK_ENTER);
-        check(app.dialogOpen() && DataFolder.current().equals(from),
-                "enter does nothing while it still names the same folder");
-        for (int i = 0; i < 40; i++) {
-            press(KeyEvent.VK_BACK_SPACE);
-        }
-        type("relative/folder");
-        press(KeyEvent.VK_HOME);
-        press(KeyEvent.VK_DELETE);
-        check(app.dialogTyped().startsWith("elative") || app.dialogTyped().isEmpty(),
-                "home and delete edit the start of the field");
-        press(KeyEvent.VK_END);
-        press(KeyEvent.VK_ENTER);
-        check(app.dialogOpen() && DataFolder.current().equals(from),
-                "a path that isn't a full one is refused");
-        press(KeyEvent.VK_ESCAPE);
-
-        app.askToMove();
-        for (int i = 0; i < DataFolder.shown().length(); i++) {
-            press(KeyEvent.VK_BACK_SPACE);
-        }
-        type(to.toString());
-        press(KeyEvent.VK_ENTER);
-        check(!app.dialogOpen() && DataFolder.current().equals(to)
-                && app.message().startsWith("Data moved to"), "a full path moves it");
+        app.moveData(picked);
+        check(DataFolder.current().equals(to) && app.message().startsWith("Data moved to"),
+                "picking a folder moves the data into a .vimdojo folder inside it");
         check(java.nio.file.Files.exists(to.resolve("settings.properties"))
                 && !java.nio.file.Files.exists(from.resolve("settings.properties")),
                 "the files go with it");
         app.setTheme("ink");
         check(Settings.load().theme.equals("ink"), "and the app keeps using the new place");
+        app.moveData(picked);
+        check(DataFolder.current().equals(to)
+                && app.message().equals("Your data is already there"),
+                "picking the same place again says so");
 
-        app.askToMove();
-        for (int i = 0; i < 200; i++) {
-            press(KeyEvent.VK_BACK_SPACE);
-        }
-        type(from.toString());
-        press(KeyEvent.VK_ENTER);
-        check(DataFolder.current().equals(from)
+        // Back where it was: the test folder's own name stands in for .vimdojo here.
+        check(DataFolder.move(from) == null && DataFolder.current().equals(from)
                 && java.nio.file.Files.exists(from.resolve("settings.properties")),
                 "and it can move back");
         app.showSettings();
@@ -551,6 +525,38 @@ public final class NavTest {
             check(undoes || !before.equals(vim.text() + vim.row() + "," + vim.col()),
                     "the example for " + entry.key() + " shows nothing happening");
         }
+
+        // An entry's height never changes while its example plays, so scrolled text stays put.
+        DocsView docsView = null;
+        java.util.ArrayDeque<java.awt.Component> found = new java.util.ArrayDeque<>();
+        found.add(app.root());
+        while (!found.isEmpty()) {
+            java.awt.Component c = found.poll();
+            if (c instanceof DocsView v) {
+                docsView = v;
+            } else if (c instanceof java.awt.Container k) {
+                found.addAll(java.util.List.of(k.getComponents()));
+            }
+        }
+        docsView.setSize(900, 500);
+        java.awt.image.BufferedImage page = new java.awt.image.BufferedImage(900, 500,
+                java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D pg = page.createGraphics();
+        for (int i = 0; i < Docs.ALL.size(); i++) {
+            if (!Docs.ALL.get(i).hasDemo()) {
+                continue;
+            }
+            docsView.select(i);
+            docsView.paint(pg);
+            int height = docsView.detailHeight();
+            for (int step = 0; step < Keys.parse(Docs.ALL.get(i).keys()).length() + 2; step++) {
+                docsView.step();
+                docsView.paint(pg);
+                check(docsView.detailHeight() == height, Docs.ALL.get(i).key()
+                        + ": the entry changes height while its example plays");
+            }
+        }
+        pg.dispose();
 
         // It opens over any screen, including mid-lesson, and gives the screen back on closing.
         command("1");

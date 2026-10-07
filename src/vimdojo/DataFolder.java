@@ -9,9 +9,10 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 /**
- * Where everything the app stores lives: ~/.vimdojo unless it has been moved. Moving it leaves
- * a one-line file, ~/.vimdojo-location, holding the new path; moving it back home removes that
- * file again. For tests, -Dvimdojo.dir=... overrides all of this for the session.
+ * Where everything the app stores lives: ~/.vimdojo unless it has been moved. It moves into a
+ * folder picked in settings, as a .vimdojo folder inside it. Moving it leaves a one-line file,
+ * ~/.vimdojo-location, holding the new path; moving it back home removes that file again. For
+ * tests, -Dvimdojo.dir=... overrides all of this for the session.
  */
 final class DataFolder {
     /** Every file the app writes, and so every file a move carries. */
@@ -70,43 +71,29 @@ final class DataFolder {
         return shown(current());
     }
 
-    /** A typed folder, with a leading ~ read as the home folder; null unless it is a full path. */
-    static Path parse(String typed) {
-        String text = typed.strip();
-        if (text.equals("~")) {
-            return home();
-        }
-        if (text.startsWith("~/") || text.startsWith("~" + File.separator)) {
-            text = home() + text.substring(1);
-        }
-        try {
-            Path path = Path.of(text);
-            return path.isAbsolute() ? path.normalize() : null;
-        } catch (RuntimeException e) {
-            return null;
-        }
+    /** Where the folder goes when a place is picked for it: a .vimdojo folder inside it. */
+    static Path inside(Path picked) {
+        Path dir = picked.toAbsolutePath().normalize();
+        Path name = dir.getFileName();
+        return name != null && name.toString().equals(".vimdojo") ? dir : dir.resolve(".vimdojo");
     }
 
     /**
-     * Moves the app's files to the folder typed, and from then on uses it. Returns why it
+     * Moves the app's files into the folder given, and from then on uses it. Returns why it
      * couldn't, or null once it has.
      */
-    static String move(String typed) {
-        Path to = parse(typed);
+    static String move(Path to) {
+        to = to.toAbsolutePath().normalize();
         Path from = current();
-        if (to == null) {
-            return "Use a full path, such as " + (File.separatorChar == '/'
-                    ? "~/Documents/vimdojo" : "C:\\Users\\you\\Documents\\vimdojo");
-        }
         if (to.equals(from)) {
-            return "That's where it is already";
+            return "Your data is already there";
         }
         if (Files.exists(to) && !Files.isDirectory(to)) {
-            return "That's a file, not a folder";
+            return "There's a file called .vimdojo there already";
         }
         for (String name : FILES) {
             if (Files.exists(to.resolve(name))) {
-                return "That folder already has vimdojo data in it";
+                return "There's vimdojo data there already";
             }
         }
         try {

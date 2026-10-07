@@ -41,6 +41,12 @@ final class DocsView extends JComponent {
     // The right-hand side scrolls on its own when an entry is too long for the window.
     private int detailScroll;
     private int detailHeight;
+    // The example at its largest over the whole playback: its most lines, its longest line,
+    // and every key it presses. Room is kept for all of it, so nothing below the example moves
+    // while it plays.
+    private int exampleRows;
+    private int exampleLongest;
+    private final List<String> exampleKeys = new ArrayList<>();
     // The last search carried out, and the one being typed (null when none is).
     private String query = "";
     private String draft;
@@ -155,6 +161,11 @@ final class DocsView extends JComponent {
 
     int selected() {
         return selected;
+    }
+
+    /** How tall the selected entry's right side is, as last painted. */
+    int detailHeight() {
+        return detailHeight;
     }
 
     /** d and u: half a window down or up through the selected entry's text. */
@@ -303,6 +314,33 @@ final class DocsView extends JComponent {
         nextKey = 0;
         typed.clear();
         nextAt = now() + PAUSE_MS;
+        exampleKeys.clear();
+        if (vim != null) {
+            Vim played = entry.vim();
+            exampleRows = played.lines().size();
+            exampleLongest = longest(played);
+            for (char key : Keys.parse(entry.keys()).toCharArray()) {
+                exampleKeys.add(keyName(key));
+                played.key(key);
+                exampleRows = Math.max(exampleRows, played.lines().size());
+                exampleLongest = Math.max(exampleLongest, longest(played));
+            }
+        }
+    }
+
+    private static int longest(Vim vim) {
+        return vim.lines().stream().mapToInt(String::length).max().orElse(0) + 1;
+    }
+
+    private static String keyName(char key) {
+        return switch (key) {
+            case Vim.ESC -> "esc";
+            case Vim.ENTER -> "enter";
+            case Vim.BACKSPACE -> "bksp";
+            case Vim.CTRL_R -> "ctrl-r";
+            case ' ' -> "space";
+            default -> String.valueOf(key);
+        };
     }
 
     /** Plays the next key of the example, or starts it again once it has finished. */
@@ -316,14 +354,7 @@ final class DocsView extends JComponent {
             return;
         }
         char key = keys.charAt(nextKey++);
-        typed.add(switch (key) {
-            case Vim.ESC -> "esc";
-            case Vim.ENTER -> "enter";
-            case Vim.BACKSPACE -> "bksp";
-            case Vim.CTRL_R -> "ctrl-r";
-            case ' ' -> "space";
-            default -> String.valueOf(key);
-        });
+        typed.add(keyName(key));
         vim.key(key);
         boolean typing = vim.mode() == Vim.Mode.INSERT || vim.mode() == Vim.Mode.SEARCH;
         nextAt = now() + (nextKey == keys.length() ? PAUSE_MS + 900 : typing ? 230 : 700);
@@ -491,7 +522,6 @@ final class DocsView extends JComponent {
     /** The example's buffer and the keys pressed so far. Returns the y below them. */
     private int paintExample(Graphics2D g, int x, int y, int width) {
         Theme t = Theme.current();
-        Docs.Entry entry = Docs.ALL.get(selected);
         int labelWidth = Paint.label(g, "example", x, y);
         String mode = switch (vim.mode()) {
             case NORMAL -> "normal";
@@ -505,21 +535,13 @@ final class DocsView extends JComponent {
         g.drawString(mode.toUpperCase(), x + labelWidth + 16, y);
         y += 16;
 
-        // The buffer, shrunk if a long line wouldn't fit the panel.
+        // The buffer, shrunk if its longest line at any point wouldn't fit the panel, and tall
+        // enough for its most lines, so the panel keeps one size while the example plays.
         float font = 20f;
-        int longest = 1;
-        int startLines = entry.vim().lines().size();
-        for (String l : vim.lines()) {
-            longest = Math.max(longest, l.length() + 1);
-        }
-        for (String l : entry.vim().lines()) {
-            longest = Math.max(longest, l.length() + 1);
-        }
         int charW = g.getFontMetrics(Theme.mono(font)).charWidth('m');
-        double scale = Math.min(1, (width - 12.0) / (charW * (longest + 3) + 44));
+        double scale = Math.min(1, (width - 12.0) / (charW * (exampleLongest + 3) + 44));
         int lineHeight = 31;
-        // Room for a line the example adds, so the panel doesn't change size while it plays.
-        int rows = Math.max(vim.lines().size(), startLines + 1);
+        int rows = Math.max(vim.lines().size(), exampleRows);
         int panelHeight = (int) ((rows * lineHeight + 36) * scale);
         Paint.panel(g, x, y, width, panelHeight);
         Graphics2D small = (Graphics2D) g.create();
@@ -529,7 +551,20 @@ final class DocsView extends JComponent {
         small.dispose();
         y += panelHeight + 34;
 
-        // The keys pressed so far, the newest one outlined. Room is kept for one row of them.
+        // Rows enough for every key the example presses, however many have been pressed yet.
+        int rowsOfKeys = 1;
+        int lineX = x;
+        for (String name : exampleKeys) {
+            int keyWidth = Paint.keycapWidth(g, name, 13f);
+            if (lineX + keyWidth > x + width) {
+                lineX = x;
+                rowsOfKeys++;
+            }
+            lineX += keyWidth + 6;
+        }
+        int keysBottom = y + (rowsOfKeys - 1) * 32;
+
+        // The keys pressed so far, the newest one outlined.
         int keyX = x;
         for (int i = 0; i < typed.size(); i++) {
             String name = typed.get(i);
@@ -546,6 +581,6 @@ final class DocsView extends JComponent {
             }
             keyX += keyWidth + 6;
         }
-        return y + 16;
+        return keysBottom + 16;
     }
 }

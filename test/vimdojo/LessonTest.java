@@ -264,16 +264,17 @@ public final class LessonTest {
             java.nio.file.Files.createDirectories(DataFolder.current());
             java.nio.file.Files.writeString(DataFolder.current().resolve("history.tsv"), "x\n");
             if (java.io.File.separatorChar == '/') {
-                check(DataFolder.shown().equals("~/.vimdojo")
-                        && DataFolder.parse("~/a/b").equals(home.resolve("a/b")),
-                        "~ stands for the home folder");
+                check(DataFolder.shown().equals("~/.vimdojo"), "shown under ~");
             }
-            check(DataFolder.move("not/a/full/path") != null, "relative paths are refused");
-            check(DataFolder.move(DataFolder.current().toString()) != null,
+            check(DataFolder.move(DataFolder.current()) != null,
                     "moving onto itself is refused");
+            check(DataFolder.inside(home.resolve("sync")).equals(home.resolve("sync/.vimdojo"))
+                    && DataFolder.inside(home.resolve("x/.vimdojo"))
+                            .equals(home.resolve("x/.vimdojo")),
+                    "a picked folder gets a .vimdojo folder inside it, unless it is one");
 
-            java.nio.file.Path sync = home.resolve("sync").resolve("vimdojo");
-            check(DataFolder.move(sync.toString()) == null, "a move to a new folder works");
+            java.nio.file.Path sync = DataFolder.inside(home.resolve("sync"));
+            check(DataFolder.move(sync) == null, "a move to a new folder works");
             check(DataFolder.current().equals(sync)
                     && java.nio.file.Files.exists(sync.resolve("history.tsv"))
                     && !java.nio.file.Files.exists(home.resolve(".vimdojo")),
@@ -284,10 +285,10 @@ public final class LessonTest {
             java.nio.file.Path taken = home.resolve("taken");
             java.nio.file.Files.createDirectories(taken);
             java.nio.file.Files.writeString(taken.resolve("settings.properties"), "");
-            check(DataFolder.move(taken.toString()) != null && DataFolder.current().equals(sync),
+            check(DataFolder.move(taken) != null && DataFolder.current().equals(sync),
                     "a folder with vimdojo data already in it is refused");
 
-            check(DataFolder.move(home.resolve(".vimdojo").toString()) == null
+            check(DataFolder.move(home.resolve(".vimdojo")) == null
                     && DataFolder.current().equals(home.resolve(".vimdojo"))
                     && !java.nio.file.Files.exists(DataFolder.pointer()),
                     "moving back home forgets the pointer");
