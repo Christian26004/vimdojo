@@ -59,8 +59,10 @@ Build the app on the machine that will use it. An app built on one Mac and downl
 another is blocked by macOS because it is not notarized, and a build only matches the chip
 (Apple Silicon or Intel) it was made on.
 
-The Windows scripts have not yet been tried on a Windows machine. If one fails, the two commands
-inside `run.bat` can be typed by hand.
+`package.bat` needs a full JDK, version 17 or newer, such as
+[Eclipse Temurin](https://adoptium.net). It finds the JDK through `JAVA_HOME`, or else through
+the `java` on the PATH, so it works even when an installer only put `java` and `javac` there.
+Double-clicked, both scripts keep their window open at the end, so any error stays readable.
 
 ## Using it
 
