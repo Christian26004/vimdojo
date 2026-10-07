@@ -275,16 +275,21 @@ public final class NavTest {
                 "dvorak is a rearrangement of the same characters");
         check(Layout.dvorak('j') == 'h' && Layout.dvorak('c') == 'j' && Layout.dvorak('Z') == ':'
                 && Layout.dvorak(' ') == ' ', "known positions");
+        check(Layout.QWERTY.chars().allMatch(c -> Layout.qwerty(Layout.dvorak((char) c)) == c),
+                "qwerty undoes dvorak");
 
         command("dvorak");
         check(app.dvorak() && app.message().startsWith("Keyboard layout: dvorak"), ":dvorak");
-        // Commands and navigation are untouched, exactly as with Vim's keymap option.
-        command("stats");
-        check(app.card().equals("stats"), "commands are typed normally with dvorak on");
-        type("gt");
+        // From here every key is read as Dvorak, commands included. A Dvorak typist on a QWERTY
+        // system presses the keys where Dvorak puts each character; qwerty() gives those keys.
+        type(qwerty(":stats"));
+        press(KeyEvent.VK_ENTER);
+        check(app.card().equals("stats"), "commands are read in dvorak");
+        type(qwerty("gt"));
         check(app.card().equals("settings"), "so is navigation");
+        type("gt");
+        check(app.card().equals("settings"), "and the qwerty keys for gt don't do it");
 
-        // Inside a lesson: commands keep their keys, typed text is converted.
         ChallengeView view = null;
         java.util.ArrayDeque<java.awt.Component> queue = new java.util.ArrayDeque<>();
         queue.add(app.root());
@@ -299,46 +304,66 @@ public final class NavTest {
         // The guided search lesson always uses the same text, and its first target is far away.
         app.startLesson(Lessons.indexOf("search"), true);
         pressOn(view, KeyEvent.VK_ENTER);
-        typeOn(view, "jl");
         Vim vim = app.run().vim();
-        check(vim.row() == 1 && vim.col() == 1, "j and l still move down and right");
+        typeOn(view, qwerty("jl"));
+        check(vim.row() == 1 && vim.col() == 1, "j and l move, on their dvorak keys");
         String before = vim.text();
-        typeOn(view, "is");
-        check(vim.mode() == Vim.Mode.INSERT && vim.text().length() == before.length() + 1
-                && vim.lines().get(1).charAt(1) == 'o',
-                "in insert mode the qwerty s key types dvorak o, got: " + vim.lines().get(1));
+        typeOn(view, qwerty("io"));
+        check(vim.mode() == Vim.Mode.INSERT && vim.lines().get(1).charAt(1) == 'o',
+                "insert mode types dvorak text, got: " + vim.lines().get(1));
         pressOn(view, KeyEvent.VK_ESCAPE);
-        typeOn(view, "u0fs");
+        typeOn(view, qwerty("u0fo"));
         check(vim.text().equals(before) && vim.col() == vim.lines().get(1).indexOf('o', 1),
-                "f takes its character in dvorak: fs finds an o");
-        typeOn(view, "/;");
+                "undo, 0 and f all work in dvorak");
+        typeOn(view, qwerty("x"));
+        check(!vim.text().equals(before), "x deletes");
+        typeOn(view, qwerty("u"));
+        // ctrl-r sits on the key where dvorak puts r.
+        KeyEvent redo = new KeyEvent(SOURCE, KeyEvent.KEY_PRESSED, 0, KeyEvent.CTRL_DOWN_MASK,
+                KeyEvent.getExtendedKeyCodeForChar(Layout.qwerty('r')), KeyEvent.CHAR_UNDEFINED);
+        for (java.awt.event.KeyListener l : view.getKeyListeners()) {
+            l.keyPressed(redo);
+        }
+        check(!vim.text().equals(before), "ctrl-r redoes, on the dvorak r key");
+        typeOn(view, qwerty("/s"));
         check(vim.searchText().equals("s"), "search patterns are typed in dvorak");
         pressOn(view, KeyEvent.VK_ESCAPE);
 
         // h on the first lesson and l on the last have nowhere to go and must not restart it.
         app.startLesson(0);
         Run firstRun = app.run();
-        typeOn(view, "h");
+        typeOn(view, qwerty("h"));
         check(app.run() == firstRun && app.lessonIndex() == 0, "h on the first lesson does nothing");
-        typeOn(view, "l");
+        typeOn(view, qwerty("l"));
         check(app.lessonIndex() == 1 && app.run() != firstRun, "l still moves on");
-        typeOn(view, "h");
+        typeOn(view, qwerty("h"));
         check(app.lessonIndex() == 0, "h still moves back");
         app.startLesson(Lessons.ALL.size() - 1);
         Run lastRun = app.run();
-        typeOn(view, "l");
+        typeOn(view, qwerty("l"));
         check(app.run() == lastRun, "l on the last lesson does nothing");
 
-        command("qwerty");
+        type(qwerty(":qwerty"));
+        press(KeyEvent.VK_ENTER);
         check(!app.dvorak() && app.message().equals("Keyboard layout: qwerty."), ":qwerty");
         command("set keymap=dvorak");
         check(app.dvorak(), "vim's own :set keymap=dvorak turns it on");
-        command("set keymap=");
+        type(qwerty(":set keymap="));
+        press(KeyEvent.VK_ENTER);
         check(!app.dvorak(), ":set keymap= turns it off");
         command("set nonsense");
         check(app.message().startsWith("E518"), "unknown option");
         command("lesson");
         check(app.card().equals("challenge"), "back in the lesson");
+    }
+
+    /** The QWERTY keys to press to type this text with the Dvorak option on. */
+    private static String qwerty(String text) {
+        StringBuilder keys = new StringBuilder();
+        for (char c : text.toCharArray()) {
+            keys.append(Layout.qwerty(c));
+        }
+        return keys.toString();
     }
 
     private static void typeOn(ChallengeView view, String text) {

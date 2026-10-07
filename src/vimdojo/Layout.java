@@ -1,9 +1,9 @@
 package vimdojo;
 
 /**
- * The table behind the Dvorak typing option, which works like Vim's {@code :set keymap=dvorak}:
- * on a keyboard the system treats as QWERTY, text you type comes out as the character in the
- * same position on a Dvorak keyboard.
+ * The table behind the Dvorak option: on a keyboard the system treats as QWERTY, every key
+ * typed is read as the character in the same position on a Dvorak keyboard, commands included,
+ * as if the system were set to Dvorak.
  */
 final class Layout {
     static final String QWERTY = "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./"
@@ -18,5 +18,11 @@ final class Layout {
     static char dvorak(char c) {
         int at = QWERTY.indexOf(c);
         return at < 0 ? c : DVORAK.charAt(at);
+    }
+
+    /** The other way: the QWERTY key a Dvorak character sits on. */
+    static char qwerty(char c) {
+        int at = DVORAK.indexOf(c);
+        return at < 0 ? c : QWERTY.charAt(at);
     }
 }

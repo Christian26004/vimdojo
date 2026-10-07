@@ -119,11 +119,10 @@ finished on each, with your current and longest streak of consecutive days.
 
 ### Keyboard layout
 
-Set **Keyboard layout** to dvorak in settings, or type `:dvorak` (or Vim's own `:set keymap=dvorak`), if
-you use Vim's Dvorak keymap on a keyboard your system treats as QWERTY. It works the way that
-Vim option does: text you insert, search patterns and the character given to `f`, `t` and `r`
-come out in Dvorak, while normal-mode commands such as `h j k l` and `dw` stay on their usual
-keys. `:qwerty` or `:set keymap=` switches back.
+Set **Keyboard layout** to dvorak in settings, or type `:dvorak` (or `:set keymap=dvorak`), if
+you type Dvorak on a keyboard your system treats as QWERTY. Every key is then read as its
+Dvorak character, commands included: `h j k l`, `dw`, `:` commands, typed text, all of it, just
+as if your system were set to Dvorak. `:qwerty` or `:set keymap=` switches back.
 
 The setting assumes your system is set to QWERTY. Leave it on qwerty if your whole system is
 set to Dvorak: the keys already arrive as Dvorak, and

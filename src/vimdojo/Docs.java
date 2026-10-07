@@ -816,10 +816,9 @@ final class Docs {
             "with no name it moves to the next theme"},
         {"commands", ":dvorak  :qwerty", "switch keyboard layout",
             "For people who type Dvorak on a keyboard their computer treats as QWERTY. With "
-                + "dvorak on, the text you type, and the characters after `f`, `t` and `r`, come "
-                + "out as Dvorak, while commands stay on their usual keys, just as Vim's own "
-                + "keymap option does. Leave it on qwerty if your computer is already set to "
-                + "Dvorak.",
+                + "dvorak on, every key is read as its Dvorak character, commands included, as "
+                + "if your computer were set to Dvorak. The bottom bar says DVORAK while it is "
+                + "on. Leave it on qwerty if your computer is already set to Dvorak.",
             "`:set keymap=dvorak` turns it on", "`:set keymap=` turns it off"},
         {"commands", ":q", "quit the app",
             "Closes vimdojo. Your results are already saved. With the docs or a replay open, "

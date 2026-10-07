@@ -68,12 +68,13 @@ final class ChallengeView extends JComponent {
                             feed(Vim.ENTER);
                         }
                     }
-                    case KeyEvent.VK_R -> {
-                        if (e.isControlDown()) {
+                    default -> {
+                        // ctrl-r, on whichever key types r in the chosen layout.
+                        char letter = Character.toLowerCase((char) e.getKeyCode());
+                        if (e.isControlDown()
+                                && (app.dvorak() ? Layout.dvorak(letter) : letter) == 'r') {
                             feed(Vim.CTRL_R);
                         }
-                    }
-                    default -> {
                     }
                 }
             }
@@ -154,9 +155,6 @@ final class ChallengeView extends JComponent {
         if (intro) {
             return;
         }
-        if (app.dvorak() && c >= 32 && typingText(run.vim())) {
-            c = Layout.dvorak(c);
-        }
         if (run.key(c, now())) {
             // Leave the finished task on screen for a moment before moving on.
             Timer next = new Timer(PAUSE_AFTER_TASK_MS, e -> {
@@ -174,19 +172,6 @@ final class ChallengeView extends JComponent {
             next.start();
         }
         app.refresh();
-    }
-
-    /**
-     * Whether the next key is text and not a command. Like Vim's keymap option, Dvorak typing
-     * covers inserted text, search patterns and the character given to f, t and r, and leaves
-     * normal-mode commands on the keys they have always had.
-     */
-    private static boolean typingText(Vim vim) {
-        if (vim.mode() == Vim.Mode.INSERT || vim.mode() == Vim.Mode.SEARCH) {
-            return true;
-        }
-        String pending = vim.pending();
-        return !pending.isEmpty() && "fFtTr".indexOf(pending.charAt(pending.length() - 1)) >= 0;
     }
 
     @Override

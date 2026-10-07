@@ -522,6 +522,11 @@ public final class App {
         if (SwingUtilities.getWindowAncestor(e.getComponent()) instanceof java.awt.Dialog) {
             return false;
         }
+        // With Dvorak on, every character is read as Dvorak's, here before anything sees it.
+        if (settings.dvorak && e.getID() == KeyEvent.KEY_TYPED && !e.isControlDown()
+                && !e.isMetaDown()) {
+            e.setKeyChar(Layout.dvorak(e.getKeyChar()));
+        }
         if (guide.active()) {
             // The tour has the keyboard to itself.
             if (e.getID() == KeyEvent.KEY_PRESSED) {
