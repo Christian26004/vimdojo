@@ -743,7 +743,8 @@ final class Lessons {
             String item = pick(r, ITEM);
             return Task.edit("remove the quoted word",
                 "`da\"` deletes the quotes, what is inside, and the space after",
-                at(verb + " \"" + item + "\" " + rest, verb.length() + 2 + r.nextInt(item.length())),
+                at(verb + " \"" + item + "\" " + rest,
+                    verb.length() + 2 + r.nextInt(item.length())),
                 verb + " " + rest, "da\"");
         },
         r -> {
@@ -999,7 +1000,8 @@ final class Lessons {
             List<int[]> order = new ArrayList<>();
             List<int[]> wrapped = new ArrayList<>();
             for (int r = 0; r < lines.length; r++) {
-                for (int c = lines[r].indexOf(pattern); c >= 0; c = lines[r].indexOf(pattern, c + 1)) {
+                for (int c = lines[r].indexOf(pattern); c >= 0;
+                     c = lines[r].indexOf(pattern, c + 1)) {
                     boolean after = r > row || (r == row && c > col);
                     (after ? order : wrapped).add(new int[] {r, c});
                 }

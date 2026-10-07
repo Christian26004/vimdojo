@@ -241,8 +241,8 @@ final class ChallengeView extends JComponent {
         // Which way this run goes: guided the first time, practice after, or a mix.
         String kind = locked ? "locked" : lesson.isMix() ? "mix"
                 : app.run().guided() ? "guided" : "practice";
-        Paint.label(g, "lesson " + (app.lessonIndex() + 1) + " of " + Lessons.ALL.size() + "  \u00b7  "
-                + kind, left, top + 12);
+        Paint.label(g, "lesson " + (app.lessonIndex() + 1) + " of " + Lessons.ALL.size()
+                + "  \u00b7  " + kind, left, top + 12);
         g.setFont(Theme.bold(36f));
         g.setColor(t.text());
         g.drawString(lesson.title(), left - 2, top + 58);

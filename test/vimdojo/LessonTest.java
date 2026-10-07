@@ -134,7 +134,8 @@ public final class LessonTest {
         }
         check(counts.keySet().equals(efficiency.keySet()),
                 "weak spots only uses lessons you have tried: " + counts.keySet());
-        check(counts.get("hjkl") > counts.get("words") && counts.get("words") > counts.get("change"),
+        check(counts.get("hjkl") > counts.get("words")
+                && counts.get("words") > counts.get("change"),
                 "weak spots favours the weakest: " + counts);
         check(Lessons.weight(40) > Lessons.weight(80) && Lessons.weight(80) > Lessons.weight(120),
                 "lower efficiency, more weight");
