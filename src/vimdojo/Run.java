@@ -1,12 +1,13 @@
 package vimdojo;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /** One attempt at a lesson: feeds keys to Vim and keeps score per task. */
 final class Run {
     private final Lesson lesson;
     private final List<Task> tasks;
+    private final boolean guided;
     private final int[] keys;
     private final long[] millis;
     private final StringBuilder[] typed;
@@ -15,9 +16,11 @@ final class Run {
     private long taskStart = -1;
     private boolean waiting;
 
-    Run(Lesson lesson, Random random) {
+    /** Guided runs show each task's hint; the tasks come already made for this run. */
+    Run(Lesson lesson, List<Task> tasks, boolean guided) {
         this.lesson = lesson;
-        this.tasks = lesson.tasks().apply(random);
+        this.tasks = List.copyOf(tasks);
+        this.guided = guided;
         this.keys = new int[tasks.size()];
         this.millis = new long[tasks.size()];
         this.typed = new StringBuilder[tasks.size()];
@@ -34,6 +37,10 @@ final class Run {
 
     List<Task> tasks() {
         return tasks;
+    }
+
+    boolean guided() {
+        return guided;
     }
 
     Task task() {
@@ -105,6 +112,16 @@ final class Run {
         if (!next.start().equals(vim.text()) || next.row() != vim.row() || next.col() != vim.col()) {
             vim = new Vim(next.start(), next.row(), next.col());
         }
+    }
+
+    /** One line per task for the history, filed under the lesson each task came from. */
+    List<History.TaskResult> results(long timestamp) {
+        List<History.TaskResult> results = new ArrayList<>();
+        for (int i = 0; i < tasks.size(); i++) {
+            results.add(new History.TaskResult(timestamp, tasks.get(i).lesson(), keys[i],
+                    tasks.get(i).par(), millis[i] / 1000.0));
+        }
+        return results;
     }
 
     Attempt attempt(long timestamp) {

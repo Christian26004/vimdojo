@@ -33,7 +33,7 @@ final class Docs {
 
         /** A fresh Vim at the start of the example. */
         Vim vim() {
-            Task task = Task.edit("", start, "", "");
+            Task task = Task.edit("", "", start, "", "");
             return new Vim(task.start(), task.row(), task.col());
         }
     }
@@ -149,6 +149,22 @@ final class Docs {
                 + "Efficiency is par divided by the keys you pressed, as a percentage. 100% means "
                 + "you matched par exactly. Below 100% you pressed extra keys, and above 100% you "
                 + "found a shorter way than par."},
+        {"guided and practice", "how a lesson changes after your first time",
+            "The first time you take a lesson it is guided: eight short tasks in teaching "
+                + "order, each saying exactly which keys to use. The introduction card says "
+                + "GUIDED at the top.\n"
+                + "Every time after that it is practice: eight tasks drawn at random from the "
+                + "lesson, with new words and positions each time. The tasks only say what to "
+                + "do, not how; the lesson's keys are listed along the bottom. The card says "
+                + "PRACTICE. `:guided` brings the guided version back whenever you like."},
+        {"mixes", "random mix and weak spots, at the end of the lessons",
+            "Two entries at the end of the lessons list mix tasks from every lesson, with no "
+                + "instructions. The bottom bar shows the keys of the lesson each task comes "
+                + "from.\n"
+                + "Random mix picks each task's lesson at random. Weak spots picks from the "
+                + "lessons you have tried, most often the ones where your recent efficiency is "
+                + "lowest, so it keeps you working on what you find hardest. Its introduction "
+                + "card names the lessons it currently favours."},
         {"examples", "every Vim key here comes with an example that plays",
             "When you select a Vim key, its example plays on the right by itself. The box shows "
                 + "the text, with the cursor as a highlighted block. Under it the keys appear "
@@ -159,7 +175,7 @@ final class Docs {
 
     /**
      * Lesson id, then for each key the lesson lists, in order: the example's start, the keys it
-     * plays, and the explanation.
+     * plays, and the explanation. The docs list them in lesson order, whatever the order here.
      */
     private static final Object[][] EXAMPLES = {
         {"hjkl",
@@ -550,6 +566,81 @@ final class Docs {
                 + "shift and n.\n"
                 + "In the example `/beta` and `n` reach the beta on line three, and `N` goes back "
                 + "to the one on line one."},
+        {"bigwords",
+            "|let x = items.count + 1;", "WWW",
+            "Jumps the cursor forward to the start of the next WORD. A WORD is everything "
+                + "between two spaces, punctuation included, so `items.count` is one WORD where "
+                + "`w` sees three words. In code full of dots and brackets, `W` gets about in far "
+                + "fewer jumps.\n"
+                + "In the example three `W`s jump to x, then =, then items.count.",
+            "let x = items.count |+ 1;", "BB",
+            "Jumps the cursor back to the start of a WORD, the backward version of `W`. Like "
+                + "`b`, from the middle of a WORD it first goes to that WORD's start.\n"
+                + "In the example the cursor starts on the +. Two `B`s jump back to the start of "
+                + "items.count, then to the =.",
+            "|items.count + max(a, b);", "E",
+            "Jumps the cursor forward to the last character of a WORD, the WORD version of "
+                + "`e`.\n"
+                + "In the example `E` jumps from the i to the t at the end of items.count, "
+                + "straight past the dot where `e` would have stopped.",
+            "if |(total > max(a, b)) {", "%",
+            "With the cursor on a bracket, `%` jumps to the bracket that pairs with it, "
+                + "skipping any pairs in between. It works on `(` `)` `[` `]` `{` `}`. If the "
+                + "cursor isn't on a bracket, it uses the next bracket to the right on the same "
+                + "line.\n"
+                + "In the example the cursor is on the first (. `%` jumps to the ) that closes "
+                + "it, past the brackets of max(a, b)."},
+        {"small",
+            "the quu|ick fox", "X",
+            "Deletes the character to the left of the cursor, like backspace in other "
+                + "editors. The cursor's own character stays. Press shift and x. A count "
+                + "deletes more: `3X` deletes three.\n"
+                + "In the example the cursor is on the i of quuick, and `X` deletes the u "
+                + "before it.",
+            "the |kuick fox", "sq<esc>",
+            "Deletes the character under the cursor and switches to insert mode, so you can "
+                + "type any amount in its place. Press `esc` when you have finished. Use `r` "
+                + "instead when one character replaces one character. It is the same as `cl`.\n"
+                + "In the example `s` deletes the k of kuick, and q is typed in its place.",
+            "one\n|tow\nthree", "Stwo<esc>",
+            "Deletes all the text on the cursor's line and switches to insert mode to type "
+                + "it again. Press shift and s, then `esc` when you have finished. It is the "
+                + "same as `cc`.\n"
+                + "In the example the middle line, tow, is rewritten as two.",
+            "|the quick\nbrown fox", "J",
+            "Moves the line below up onto the end of the cursor's line, with one space "
+                + "between them. Press shift and j. Press it again to join the next line too.\n"
+                + "In the example the two lines become one: the quick brown fox.",
+            "|vim is fun", "~",
+            "Turns the letter under the cursor from lowercase to uppercase or back, then "
+                + "moves the cursor one character right. On anything that isn't a letter it only "
+                + "moves right. A count switches several letters: `4~` does four.\n"
+                + "In the example `~` turns the v of vim into a capital V."},
+        {"brackets",
+            "say \"hel|lo\" now", "da\"",
+            "Like `i\"`, but takes the quote marks too, plus the space after the closing one. "
+                + "Use it to remove a quoted string entirely. `a'` and `a`` do the same for "
+                + "single quotes and backticks.\n"
+                + "In the example `da\"` deletes \"hello\" and the space after it, leaving say "
+                + "now.",
+            "call(alpha, |beta) + 1", "da(",
+            "Like `i(`, but takes the round brackets themselves too. `a)` and `ab` are the "
+                + "same.\n"
+                + "In the example `da(` deletes (alpha, beta), leaving call + 1.",
+            "list[|index + 1]", "ci[0<esc>",
+            "Like `i(`, but for square brackets [ ]: everything between them, without the "
+                + "brackets. `a[` takes the brackets too, and `i]` and `a]` are the same.\n"
+                + "In the example `ci[` deletes index + 1 and 0 is typed instead.",
+            "if (ok) { |run(); }", "di{",
+            "Like `i(`, but for curly braces { }: everything between them, without the "
+                + "braces. `a{` takes the braces too, and `i}`, `a}`, `iB` and `aB` are the "
+                + "same.\n"
+                + "In the example `di{` deletes everything between the braces.",
+            "copy src/ma|in.c now", "ciWlib.c<esc>",
+            "Like `iw`, but a WORD: everything between two spaces, punctuation included. "
+                + "`aW` takes the space after it too.\n"
+                + "In the example the cursor is inside src/main.c. `ciW` deletes all of it, "
+                + "where `ciw` would only have taken main, and lib.c is typed instead."},
     };
 
     /**
@@ -563,21 +654,6 @@ final class Docs {
                 + "a motion, two numbers multiply: `2d3w` deletes six words.\n"
                 + "In the example `3x` deletes the three x characters in front of good.",
             "works with almost everything:", "`3x` `2dd` `4p` `3u` `5j` `2fx` `3rx`"},
-        {"W  B  E", "like w b e, but only spaces end a word",
-            "|let x = items.count + 1;", "WWWBB",
-            "Move like `w`, `b` and `e`, but by WORDs: anything between spaces counts as one, "
-                + "punctuation included. Use them to skip over things like items.count or "
-                + "src/main.c in one jump instead of several.\n"
-                + "In the example three `W`s jump to x, then =, then items.count as one WORD, "
-                + "and two `B`s go back to x.",
-            "`w` stops at punctuation; `W` does not"},
-        {"%", "jump to the matching bracket", "if |(total > max(a, b)) {", "%",
-            "With the cursor on a bracket, `%` jumps to the bracket that pairs with it, "
-                + "skipping any pairs in between. If the cursor isn't on a bracket, it uses the "
-                + "next bracket to the right on the same line.\n"
-                + "In the example the cursor is on the first (. `%` jumps to the ) that closes "
-                + "it, past the brackets of max(a, b).",
-            "works on `(` `)` `[` `]` `{` `}`"},
         {"3gg", "go to line 3 - the same as 3G", "|" + FIVE, "3gg",
             "A number before `gg` goes to that line, just as it does before `G`.\n"
                 + "In the example `3gg` moves the cursor from line one to line three."},
@@ -586,35 +662,10 @@ final class Docs {
                 + "to the right, not the first.\n"
                 + "In the example `2f-` jumps straight to the second dash.",
             "works with `f` `F` `t` `T` `;` `,`"},
-        {"X", "delete the character before the cursor", "the quu|ick fox", "X",
-            "Deletes the character to the left of the cursor, like backspace in other "
-                + "editors. The cursor's own character stays. Press shift and x.\n"
-                + "In the example the cursor is on the i of quuick, and `X` deletes the u "
-                + "before it."},
         {"3rx", "replace the next three characters", "|aaa bbb", "3rx",
             "A number before `r` replaces that many characters, starting at the cursor, all "
                 + "with the same character.\n"
                 + "In the example `3rx` turns aaa into xxx."},
-        {"s", "replace one character and keep typing", "the |kuick fox", "sq<esc>",
-            "Deletes the character under the cursor and switches to insert mode, so you can "
-                + "type any amount in its place. Press `esc` when you have finished. Use `r` "
-                + "instead when one character replaces one character.\n"
-                + "In the example `s` deletes the k of kuick, and q is typed in its place.",
-            "the same as `cl`"},
-        {"S", "rewrite the whole line", "one\n|tow\nthree", "Stwo<esc>",
-            "Deletes all the text on the cursor's line and switches to insert mode to type "
-                + "it again. Press shift and s, then `esc` when you have finished.\n"
-                + "In the example the middle line, tow, is rewritten as two.",
-            "the same as `cc`"},
-        {"J", "join the next line onto this one", "|the quick\nbrown fox", "J",
-            "Moves the line below up onto the end of the cursor's line, with one space "
-                + "between them. Press shift and j.\n"
-                + "In the example the two lines become one: the quick brown fox."},
-        {"~", "switch a letter between uppercase and lowercase", "|vim is fun", "~",
-            "Turns the letter under the cursor from lowercase to uppercase or back, then "
-                + "moves the cursor one character right. On anything that isn't a letter it only "
-                + "moves right.\n"
-                + "In the example `~` turns the v of vim into a capital V."},
         {"y + motion", "yank wherever a motion goes", "|copy this, not that", "yt,$p",
             "`y` is an operator, like `d`: follow it with any motion or text object, and it "
                 + "copies that text into the register instead of deleting it. The text stays "
@@ -626,38 +677,15 @@ final class Docs {
             "A number before `p` or `P` puts that many copies at once.\n"
                 + "In the example `yy` copies the line row and `3p` puts three copies below it.",
             "`P` takes a count too"},
-        {"iW  aW", "a WORD: everything up to the spaces", "copy src/ma|in.c now", "daW",
-            "Like `iw` and `aw`, but with WORDs: everything between two spaces is one, "
-                + "punctuation included.\n"
-                + "In the example the cursor is in src/main.c. `daW` deletes all of it and a "
-                + "space, where `daw` would only have deleted main."},
         {"i'  i`", "inside single quotes or backticks", "name = '|old';", "ci'new<esc>",
             "Like `i\"`, but between a pair of single quotes, or a pair of backticks, on the "
                 + "cursor's line.\n"
                 + "In the example `ci'` deletes old between the quotes and new is typed instead."},
-        {"a\"  a'  a`", "the quotes as well, and the space after",
-            "say \"hel|lo\" now", "da\"",
-            "Like `i\"`, but takes the quote marks too, plus the space after the closing one. "
-                + "Use it to remove a quoted string entirely.\n"
-                + "In the example `da\"` deletes \"hello\" and the space after it, leaving say "
-                + "now."},
-        {"a(", "the brackets and everything in them", "call(alpha, |beta) + 1", "da(",
-            "Like `i(`, but takes the round brackets themselves too.\n"
-                + "In the example `da(` deletes (alpha, beta), leaving call + 1.",
-            "`a)` and `ab` are the same"},
         {"ib  iB", "ib is i( and iB is i{", "max(|a, b)", "dib",
             "Shorter names for two text objects: `ib` (b for brackets) is the same as `i(`, "
                 + "and `iB` (big brackets) is the same as `i{`.\n"
                 + "In the example `dib` deletes a, b from inside the brackets.",
             "`i)` and `i}` work too"},
-        {"i[  a[", "inside, or around, square brackets", "list[|index + 1]", "ci[0<esc>",
-            "Like `i(` and `a(`, but for square brackets [ ].\n"
-                + "In the example `ci[` deletes index + 1 and 0 is typed instead.",
-            "`i]` and `a]` are the same"},
-        {"i{  a{", "inside, or around, curly braces", "if (ok) { |run(); }", "di{",
-            "Like `i(` and `a(`, but for curly braces { }.\n"
-                + "In the example `di{` deletes everything between the braces.",
-            "`i}` `a}` `aB` are the same"},
         {"i<  a<", "inside, or around, angle brackets", "List<|String> names",
             "ci<Integer<esc>",
             "Like `i(` and `a(`, but for angle brackets < >.\n"
@@ -752,8 +780,15 @@ final class Docs {
             "Opens the next lesson, or the previous one, on its introduction card.",
             "`:n` for next", "`:p` `:previous` `:N` for previous"},
         {"commands", ":7", "lesson 7 - any number",
-            "A colon and a number opens that lesson, on its introduction card.",
-            "from `:1` to `:17`"},
+            "A colon and a number opens that lesson, on its introduction card. The numbers are "
+                + "the ones in the lessons list.",
+            "from `:1` to `:" + Lessons.ALL.size() + "`"},
+        {"commands", ":guided", "the current lesson's guided version again",
+            "The first time you take a lesson, its tasks come in teaching order and each says "
+                + "which keys to use. After that the lesson gives random tasks without "
+                + "instructions. `:guided` starts the guided version again, for when you want "
+                + "a reminder.",
+            "`:guide` works too"},
         {"commands", ":restart", "start the lesson again",
             "Starts the current lesson again from its introduction card, with fresh tasks. "
                 + "The unfinished attempt isn't recorded.",
@@ -865,9 +900,10 @@ final class Docs {
         for (String[] row : WORDS) {
             entries.add(new Entry(TERMS, row[0], row[1], null, null, row[2], List.of()));
         }
-        for (Object[] row : EXAMPLES) {
-            Lesson lesson = Lessons.ALL.stream().filter(l -> l.id().equals(row[0])).findFirst()
-                    .orElseThrow();
+        for (Lesson lesson : Lessons.LESSONS) {
+            Object[] row = java.util.Arrays.stream(EXAMPLES).filter(e -> e[0].equals(lesson.id()))
+                    .findFirst().orElseThrow(() -> new IllegalStateException("no examples for "
+                            + lesson.id()));
             if (row.length != 1 + lesson.keys().size() * 3) {
                 throw new IllegalStateException("examples for " + row[0] + " don't match its keys");
             }

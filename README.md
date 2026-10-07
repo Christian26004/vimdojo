@@ -1,6 +1,6 @@
 # vimdojo
 
-A local trainer for Vim keybindings. Sixteen short lessons each introduce a few keys, drill them in a small built-in Vim, and score you on keystrokes and time; a seventeenth mixes everything together with no hints. Tasks are filled with different words and positions on every run. Everything runs and is stored on your own machine.
+A local trainer for Vim keybindings. Nineteen short lessons each introduce a few keys, drill them in a small built-in Vim, and score you on keystrokes and time. The first time through, a lesson is guided: eight tasks in teaching order, each saying which keys to use. After that it is practice: random tasks with only the keys listed, the rest up to you. Two mixes draw tasks from every lesson, one at random and one weighted toward the lessons you find hardest. Tasks are filled with different words and positions on every run. Everything runs and is stored on your own machine.
 
 ## Requirements
 
@@ -69,6 +69,12 @@ inside `run.bat` can be typed by hand.
   your first lesson. `:tour` shows it again.
 - Each lesson opens on an introduction card that lists its keys and plays a demonstration:
   the lesson's own tasks solved one key at a time, with each key shown as it is pressed.
+- The first run of a lesson is **guided**: each task says exactly which keys to use. Every run
+  after that is **practice**: tasks drawn at random from the lesson, saying only what to do,
+  with the lesson's keys listed along the bottom. `:guided` brings the guided version back.
+- At the end of the list, **random mix** gives ten tasks from lessons picked at random, and
+  **weak spots** ten from the lessons you have tried, most often the ones where your recent
+  efficiency is lowest.
 - **Enter** starts a lesson from its introduction card; **Tab** restarts it.
 - After the last task you see your efficiency (keystrokes against par), time, a per-task chart,
   and the par solution for every task. Click a task there (or pick it with `j`/`k` and press
@@ -85,6 +91,7 @@ Everything can be reached from the keyboard, the Vim way:
 | `:lessons` `:stats` `:settings` | open that screen |
 | `:lesson` `:ready` | back to the lesson in progress |
 | `:next` `:prev` `:7` | another lesson, by direction or number |
+| `:guided` | the current lesson's guided version again |
 | `:restart` | start the lesson again |
 | `:colo paper` | switch theme (ink, paper, moss, indigo) |
 | `:dvorak` `:qwerty` | switch keyboard layout |

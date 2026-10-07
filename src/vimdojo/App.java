@@ -9,8 +9,10 @@ import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.Random;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -136,8 +138,8 @@ public final class App {
                     "These open the other screens. `gt` steps through them too, and `:` "
                             + "starts a command, as in Vim."),
             new Guide.Step(this::showLessons, () -> page("lessons"),
-                    "Lessons lists all " + Lessons.ALL.size() + " lessons. Pick one with `j` "
-                            + "`k` and `enter`."),
+                    "Lessons lists all " + Lessons.LESSONS.size() + " lessons and two mixes "
+                            + "for practice. Pick one with `j` `k` and `enter`."),
             new Guide.Step(this::showStats, () -> page("stats"),
                     "Stats keeps your best efficiency and time for each lesson, and a calendar "
                             + "of the days you practiced."),
@@ -230,21 +232,59 @@ public final class App {
     }
 
     void startLesson(int index) {
+        startLesson(index, false);
+    }
+
+    /**
+     * Opens a lesson on its introduction card with fresh tasks. A lesson never finished before
+     * runs guided, as does any lesson when asked; otherwise it is practice. The mixes draw
+     * their tasks from the other lessons.
+     */
+    void startLesson(int index, boolean guide) {
         settings.lesson = Math.max(0, Math.min(index, Lessons.ALL.size() - 1));
         settings.save();
-        run = new Run(Lessons.ALL.get(settings.lesson), random);
+        Lesson lesson = Lessons.ALL.get(settings.lesson);
+        boolean guided = !lesson.isMix() && (guide || history.runs(lesson.id()) == 0);
+        List<Task> tasks = switch (lesson.kind()) {
+            case RANDOM_MIX -> Lessons.randomMix(random);
+            case WEAK_SPOTS -> Lessons.weakSpots(random, history.recentEfficiency());
+            case LESSON -> (guided ? lesson.guided() : lesson.practice()).apply(random);
+        };
+        run = new Run(lesson, tasks, guided);
         challengeView.begin();
         show("challenge", challengeView);
+    }
+
+    /**
+     * The introduction card's text for a lesson without keys of its own. Weak spots also lists
+     * the lessons it will favour.
+     */
+    String introNote() {
+        Lesson lesson = run.lesson();
+        if (lesson.kind() != Lesson.Kind.WEAK_SPOTS) {
+            return lesson.note();
+        }
+        Map<String, Double> efficiency = history.recentEfficiency();
+        if (efficiency.isEmpty()) {
+            return "Nothing to go on yet, so for now this is a random mix. Finish a lesson or two"
+                    + " and it will start to favour your weakest ones.";
+        }
+        String weakest = efficiency.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue()).limit(3)
+                .map(e -> Lessons.byId(e.getKey()).title() + " " + Math.round(e.getValue()) + "%")
+                .collect(Collectors.joining(", "));
+        return lesson.note() + " Most often right now: " + weakest + ".";
     }
 
     void finishRun() {
         if (!card.equals("challenge")) {
             return;
         }
-        Attempt attempt = run.attempt(System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        Attempt attempt = run.attempt(now);
         OptionalDouble efficiency = history.bestEfficiency(attempt.lesson());
         OptionalDouble seconds = history.bestSeconds(attempt.lesson());
-        history.add(attempt);
+        history.add(attempt, run.results(now));
         resultView.show(run, attempt, efficiency, seconds);
         show("result", resultView);
     }
@@ -544,6 +584,13 @@ public final class App {
             }
             case "lesson", "l", "ready" -> showLesson();
             case "restart", "e", "e!" -> startLesson(settings.lesson);
+            case "guided", "guide" -> {
+                if (Lessons.ALL.get(settings.lesson).isMix()) {
+                    message = "The mixes have no guided version: pick a lesson first";
+                } else {
+                    startLesson(settings.lesson, true);
+                }
+            }
             case "next", "n" -> {
                 if (settings.lesson == Lessons.ALL.size() - 1) {
                     message = "E165: Cannot go beyond last lesson";

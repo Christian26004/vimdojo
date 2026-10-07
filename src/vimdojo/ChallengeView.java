@@ -229,8 +229,10 @@ final class ChallengeView extends JComponent {
             }
         }
 
-        Paint.label(g, "lesson " + (app.lessonIndex() + 1) + " of " + Lessons.ALL.size(), left,
-                top + 12);
+        // Which way this run goes: guided the first time, practice after, or a mix.
+        String kind = lesson.isMix() ? "mix" : app.run().guided() ? "guided" : "practice";
+        Paint.label(g, "lesson " + (app.lessonIndex() + 1) + " of " + Lessons.ALL.size() + "  \u00b7  "
+                + kind, left, top + 12);
         g.setFont(Theme.bold(36f));
         g.setColor(t.text());
         g.drawString(lesson.title(), left - 2, top + 58);
@@ -238,12 +240,17 @@ final class ChallengeView extends JComponent {
         g.fillRect(left, top + 78, 44, 4);
 
         int y = top + keysTop;
-        if (lesson.note() != null) {
+        String note = lesson.isMix() ? app.introNote()
+                : app.run().guided() ? "First time through: each task says which keys to use."
+                : "Practice: random tasks, no instructions. `:guided` walks you through again.";
+        if (!lesson.isMix()) {
+            Paint.prose(g, note, left, top + 106, 14f, t.sub());
+        } else {
             // Wrap the note to the card's width.
             g.setFont(Theme.ui(17f));
             g.setColor(t.text());
             StringBuilder line = new StringBuilder();
-            for (String word : lesson.note().split(" ")) {
+            for (String word : note.split(" ")) {
                 if (g.getFontMetrics().stringWidth(line + " " + word) > INTRO_WIDTH - 40) {
                     g.drawString(line.toString(), left, y);
                     y += 30;
@@ -396,7 +403,7 @@ final class ChallengeView extends JComponent {
     private void startDemo() {
         Lesson lesson = app.run().lesson();
         // The review gives no hints, so it has nothing to demonstrate.
-        demo = lesson.keys().isEmpty() ? null : new Run(lesson, new Random());
+        demo = lesson.isMix() ? null : new Run(lesson, lesson.guided().apply(new Random()), true);
         demoKey = 0;
         demoTyped.clear();
         demoNextAt = now() + DEMO_PAUSE_MS;
@@ -412,7 +419,7 @@ final class ChallengeView extends JComponent {
             demoKey = 0;
             demoTyped.clear();
             if (demo.finished()) {
-                demo = new Run(demo.lesson(), new Random());
+                demo = new Run(demo.lesson(), demo.lesson().guided().apply(new Random()), true);
             }
             demoNextAt = now() + DEMO_PAUSE_MS;
             return;
@@ -446,7 +453,9 @@ final class ChallengeView extends JComponent {
         // window's width needs.
         List<List<String>> rows = new ArrayList<>();
         List<Integer> rowWidths = new ArrayList<>();
-        for (Lesson.Key key : run.lesson().keys()) {
+        // In a mix, the keys of the lesson this task comes from.
+        Lesson from = Lessons.byId(run.task().lesson());
+        for (Lesson.Key key : (from == null ? run.lesson() : from).keys()) {
             String item = "`" + key.key() + "` " + key.does();
             int width = Paint.proseWidth(g, item, 13f);
             int last = rows.size() - 1;

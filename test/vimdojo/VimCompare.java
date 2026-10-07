@@ -60,9 +60,11 @@ public final class VimCompare {
             }
         }
         // Several runs of every lesson, since the tasks are different each time.
-        for (Lesson lesson : Lessons.ALL) {
+        for (Lesson lesson : Lessons.LESSONS) {
             for (int seed = 1; seed <= 12; seed++) {
-                for (Task task : lesson.tasks().apply(new Random(seed))) {
+                List<Task> both = new ArrayList<>(lesson.guided().apply(new Random(seed)));
+                both.addAll(lesson.practice().apply(new Random(seed)));
+                for (Task task : both) {
                     cases.add(new Case(task.start(), task.row(), task.col(), task.solution()));
                 }
             }

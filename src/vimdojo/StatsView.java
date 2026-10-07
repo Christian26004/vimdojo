@@ -96,10 +96,11 @@ final class StatsView extends JComponent {
         int y = 12;
 
         // Totals, one tile each.
-        long learned = all.stream().map(Attempt::lesson).distinct().count();
+        long learned = all.stream().map(Attempt::lesson).distinct()
+                .filter(id -> Lessons.byId(id) != null && !Lessons.byId(id).isMix()).count();
         List<Attempt> lastTen = all.subList(Math.max(0, all.size() - 10), all.size());
         String[][] totals = {
-            {"lessons learned", learned + " of " + Lessons.ALL.size()},
+            {"lessons learned", learned + " of " + Lessons.LESSONS.size()},
             {"runs", Integer.toString(all.size())},
             {"time practicing", duration(all.stream().mapToDouble(Attempt::seconds).sum())},
             {"keys pressed", String.format(Locale.ENGLISH, "%,d",

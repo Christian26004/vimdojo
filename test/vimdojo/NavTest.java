@@ -163,8 +163,8 @@ public final class NavTest {
                 queue.addAll(java.util.List.of(k.getComponents()));
             }
         }
-        // The search lesson always uses the same text, and its first target is far away.
-        app.startLesson(15);
+        // The guided search lesson always uses the same text, and its first target is far away.
+        app.startLesson(Lessons.indexOf("search"), true);
         pressOn(view, KeyEvent.VK_ENTER);
         typeOn(view, "jl");
         Vim vim = app.run().vim();

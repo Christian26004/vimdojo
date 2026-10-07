@@ -119,10 +119,12 @@ final class LessonsView extends JComponent {
             g.setColor(t.text());
             g.drawString(lesson.title(), left + 50, baseline);
             int x = left + width * 34 / 100;
-            if (lesson.keys().isEmpty()) {
+            if (lesson.isMix()) {
                 g.setFont(Theme.ui(14f));
                 g.setColor(t.sub());
-                g.drawString("everything, with no hints", x, baseline);
+                g.drawString(lesson.kind() == Lesson.Kind.RANDOM_MIX
+                        ? "tasks from every lesson, at random"
+                        : "tasks from your weakest lessons", x, baseline);
             }
             for (Lesson.Key key : lesson.keys()) {
                 if (x + Paint.keycapWidth(g, key.key(), 11.5f) > bestX - 16) {

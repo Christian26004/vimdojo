@@ -39,8 +39,11 @@ final class Settings {
                 s.theme = p.getProperty("theme", s.theme);
                 s.dvorak = Boolean.parseBoolean(p.getProperty("dvorak"));
                 s.finishedGuide = Boolean.parseBoolean(p.getProperty("finished_guide"));
-                int lesson = Integer.parseInt(p.getProperty("lesson", "0"));
-                s.lesson = Math.max(0, Math.min(lesson, Lessons.ALL.size() - 1));
+                // Saved as the lesson's id; older versions saved its position in the list.
+                String lesson = p.getProperty("lesson", "0");
+                s.lesson = lesson.matches("\\d+")
+                        ? Math.max(0, Math.min(Integer.parseInt(lesson), Lessons.ALL.size() - 1))
+                        : Math.max(0, Lessons.indexOf(lesson));
             } catch (IOException | IllegalArgumentException e) {
                 System.err.println("vimdojo: ignoring unreadable settings: " + e.getMessage());
             }
@@ -51,7 +54,7 @@ final class Settings {
     void save() {
         Properties p = new Properties();
         p.setProperty("theme", theme);
-        p.setProperty("lesson", Integer.toString(lesson));
+        p.setProperty("lesson", Lessons.ALL.get(lesson).id());
         p.setProperty("dvorak", Boolean.toString(dvorak));
         p.setProperty("finished_guide", Boolean.toString(finishedGuide));
         try {
