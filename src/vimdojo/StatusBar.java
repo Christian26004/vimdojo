@@ -141,7 +141,8 @@ final class StatusBar extends JPanel {
                         + "   `space` `b` page"
                 : app.replayOpen() ? "`q` close   `j` `k` other tasks"
                 : switch (app.card()) {
-            case "challenge" -> app.inIntro() ? "`enter` begin   `h` `l` other lessons"
+            case "challenge" -> app.inIntro() ? (app.locked() ? "`h` `l` other lessons"
+                    : "`enter` begin   `h` `l` other lessons")
                     : "`tab` restart";
             case "result" -> (app.lessonIndex() == Lessons.ALL.size() - 1
                     || !app.unlocked(app.lessonIndex() + 1) ? "`tab` try again"

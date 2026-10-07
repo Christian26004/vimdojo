@@ -124,7 +124,9 @@ final class ChallengeView extends JComponent {
 
     /** Leaves the introduction card for the first task. */
     void start() {
-        if (intro) {
+        if (intro && app.locked()) {
+            app.refuseLocked();
+        } else if (intro) {
             intro = false;
             app.run().shown(now());
             app.refresh();
@@ -200,6 +202,13 @@ final class ChallengeView extends JComponent {
     private void paintIntro(Graphics2D g) {
         Theme t = Theme.current();
         Lesson lesson = app.run().lesson();
+        // A locked lesson can be looked at, faded, but not begun.
+        boolean locked = app.locked();
+        java.awt.Composite normal = g.getComposite();
+        if (locked) {
+            g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER,
+                    0.4f));
+        }
         // Everything hangs off one fixed corner, sized for the longest lesson, so the card
         // sits in the same place whichever lesson is showing. With room, the demonstration goes
         // beside the keys; in a narrow window it goes underneath them.
@@ -230,7 +239,8 @@ final class ChallengeView extends JComponent {
         }
 
         // Which way this run goes: guided the first time, practice after, or a mix.
-        String kind = lesson.isMix() ? "mix" : app.run().guided() ? "guided" : "practice";
+        String kind = locked ? "locked" : lesson.isMix() ? "mix"
+                : app.run().guided() ? "guided" : "practice";
         Paint.label(g, "lesson " + (app.lessonIndex() + 1) + " of " + Lessons.ALL.size() + "  \u00b7  "
                 + kind, left, top + 12);
         g.setFont(Theme.bold(36f));
@@ -243,8 +253,17 @@ final class ChallengeView extends JComponent {
         String note = lesson.isMix() ? app.introNote()
                 : app.run().guided() ? "First time through: each task says which keys to use."
                 : "Practice: random tasks, no instructions. `:guided` walks you through again.";
+        if (locked) {
+            g.setComposite(normal);
+            Paint.prose(g, app.lockedMessage(app.lessonIndex()) + ".", left, top + 106, 14f,
+                    t.accent());
+            g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER,
+                    0.4f));
+        }
         if (!lesson.isMix()) {
-            Paint.prose(g, note, left, top + 106, 14f, t.sub());
+            if (!locked) {
+                Paint.prose(g, note, left, top + 106, 14f, t.sub());
+            }
         } else {
             // Wrap the note to the card's width.
             g.setFont(Theme.ui(17f));
@@ -270,6 +289,7 @@ final class ChallengeView extends JComponent {
         // y is now one row past the last key, or on the note's last line if there are no keys.
         int bottom = (lesson.keys().isEmpty() ? y : y - rowHeight) + 16;
         introKeys.setBounds(left, top - 4, INTRO_WIDTH - 40, bottom - (top - 4));
+        g.setComposite(normal);
     }
 
     /**

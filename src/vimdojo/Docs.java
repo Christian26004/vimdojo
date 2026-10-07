@@ -158,16 +158,17 @@ final class Docs {
                 + "do, not how; the lesson's keys are listed along the bottom. The card says "
                 + "PRACTICE. `:guided` brings the guided version back whenever you like."},
         {"locked lessons", "each lesson opens at 50% on the one before",
-            "Lessons open one at a time. At first only lesson 1 is open. When you finish a "
-                + "lesson with at least 50% efficiency, the next one opens, and every lesson you "
-                + "have opened stays open.\n"
-                + "Lessons that aren't open yet are greyed out in the lessons list, which says "
-                + "which lesson to pass to open them. Trying to start one says the same in the "
-                + "bottom bar. The results screen tells you when a run has opened the next "
+            "Lessons unlock one at a time. At first only lesson 1 can be played. When you "
+                + "finish a lesson with at least 50% efficiency, the next one unlocks, and every "
+                + "lesson you have unlocked stays that way.\n"
+                + "Locked lessons are greyed out, but you can still open them: their card shows "
+                + "the keys and plays the demonstration, faded, with a line saying which lesson "
+                + "to pass. Pressing `enter` on it says the same in the bottom bar instead of "
+                + "starting. The results screen tells you when a run has unlocked the next "
                 + "lesson.\n"
-                + "The two mixes open once you have passed lesson 1, and the random mix only "
-                + "uses lessons that are open. Erasing your progress in settings locks "
-                + "everything after lesson 1 again."},
+                + "The two mixes unlock once you have passed lesson 1, and the random mix only "
+                + "uses unlocked lessons. Erasing your progress in settings locks everything "
+                + "after lesson 1 again."},
         {"mixes", "random mix and weak spots, at the end of the lessons",
             "Two entries at the end of the lessons list mix tasks from every lesson, with no "
                 + "instructions. The bottom bar shows the keys of the lesson each task comes "

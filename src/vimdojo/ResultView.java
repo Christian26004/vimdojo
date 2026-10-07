@@ -206,8 +206,8 @@ final class ResultView extends JComponent {
                     && previousEfficiency.orElse(0) < App.PASS;
             g.setFont(justNow ? Theme.bold(15f) : Theme.ui(15f));
             g.setColor(justNow ? t.good() : t.sub());
-            g.drawString(justNow ? "Lesson " + (next + 1) + " is now open."
-                    : open ? "" : "Reach " + Math.round(App.PASS) + "% efficiency to open lesson "
+            g.drawString(justNow ? "Lesson " + (next + 1) + " is now unlocked."
+                    : open ? "" : "Reach " + Math.round(App.PASS) + "% efficiency to unlock lesson "
                     + (next + 1) + ".", left, recapY + 66);
         }
 

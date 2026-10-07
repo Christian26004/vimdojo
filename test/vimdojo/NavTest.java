@@ -136,42 +136,57 @@ public final class NavTest {
         check(!app.guideOpen() && app.card().equals("challenge"), "escape skips the rest");
     }
 
-    /** Lessons open one at a time, each at 50% on the one before; erasing locks them again. */
+    /**
+     * Lessons unlock one at a time, each at 50% on the one before; a locked one can be looked at
+     * but not begun, and erasing locks them again.
+     */
     private static void locking() {
+        ChallengeView view = null;
+        java.util.ArrayDeque<java.awt.Component> queue = new java.util.ArrayDeque<>();
+        queue.add(app.root());
+        while (!queue.isEmpty()) {
+            java.awt.Component c = queue.poll();
+            if (c instanceof ChallengeView v) {
+                view = v;
+            } else if (c instanceof java.awt.Container k) {
+                queue.addAll(java.util.List.of(k.getComponents()));
+            }
+        }
         int random = Lessons.indexOf("random");
         check(app.unlocked(0) && !app.unlocked(1) && !app.unlocked(random),
-                "a new user starts with only lesson 1 open");
+                "a new user starts with only lesson 1 unlocked");
         command("2");
-        check(app.lessonIndex() == 0 && app.message().startsWith("Lesson 2 is locked"),
-                ":2 is refused: " + app.message());
-        command("next");
-        check(app.lessonIndex() == 0 && app.message().startsWith("Lesson 2 is locked"),
-                ":next is refused");
+        check(app.lessonIndex() == 1 && app.inIntro() && app.locked(),
+                "a locked lesson still opens, to look at");
+        pressOn(view, KeyEvent.VK_ENTER);
+        check(app.inIntro() && app.message().startsWith("Lesson 2 is locked: reach 50%"),
+                "but enter doesn't begin it: " + app.message());
         command(Integer.toString(random + 1));
-        check(app.lessonIndex() == 0 && app.message().startsWith("The mixes are locked"),
-                "so are the mixes");
+        pressOn(view, KeyEvent.VK_ENTER);
+        check(app.inIntro() && app.message().startsWith("The mixes are locked"),
+                "nor a mix");
+        command("1");
+        check(!app.locked(), "lesson 1 is never locked");
 
         app.history().add(new Attempt(1L, "hjkl", 10, 100, 40, 8), java.util.List.of());
         check(!app.unlocked(1), "40% is not enough");
         app.history().add(new Attempt(2L, "hjkl", 10, 100, 50, 8), java.util.List.of());
         check(app.unlocked(1) && !app.unlocked(2) && app.unlocked(random),
-                "50% opens lesson 2 and the mixes, and nothing further");
+                "50% unlocks lesson 2 and the mixes, and nothing further");
         command("2");
-        check(app.lessonIndex() == 1, "lesson 2 opens");
-        command("prev");
-        check(app.lessonIndex() == 0, "earlier lessons stay open");
+        pressOn(view, KeyEvent.VK_ENTER);
+        check(app.lessonIndex() == 1 && !app.inIntro(), "lesson 2 can be played now");
 
-        command("2");
         app.eraseProgress();
         check(!app.unlocked(1) && app.lessonIndex() == 0,
                 "erasing locks the lessons again and goes back to lesson 1");
 
-        // Open everything for the checks that follow.
+        // Unlock everything for the checks that follow.
         for (Lesson lesson : Lessons.LESSONS) {
             app.history().add(new Attempt(3L, lesson.id(), 10, 8, 8, 8), java.util.List.of());
         }
         for (int i = 0; i < Lessons.ALL.size(); i++) {
-            check(app.unlocked(i), "passing every lesson opens " + Lessons.ALL.get(i).id());
+            check(app.unlocked(i), "passing every lesson unlocks " + Lessons.ALL.get(i).id());
         }
         command("1");
     }

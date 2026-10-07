@@ -109,8 +109,7 @@ public final class App {
         root.add(guide);
         root.add(body);
 
-        // A lesson left open last time may have been locked since, by erasing progress.
-        startLesson(unlocked(settings.lesson) ? settings.lesson : frontier());
+        startLesson(settings.lesson);
         // Shown once, to someone who has never used the app.
         if (!settings.finishedGuide && history.all().isEmpty()) {
             guide.start();
@@ -241,15 +240,11 @@ public final class App {
     /**
      * Opens a lesson on its introduction card with fresh tasks. A lesson never finished before
      * runs guided, as does any lesson when asked; otherwise it is practice. The mixes draw
-     * their tasks from the other lessons.
+     * their tasks from the other lessons. A locked lesson opens too, to look at, but can't be
+     * begun.
      */
     void startLesson(int index, boolean guide) {
         index = Math.max(0, Math.min(index, Lessons.ALL.size() - 1));
-        if (!unlocked(index)) {
-            message = lockedMessage(index);
-            refresh();
-            return;
-        }
         prepare(index, guide);
         show("challenge", challengeView);
     }
@@ -289,12 +284,23 @@ public final class App {
         return Lessons.ALL.get(index).isMix() ? frontier() >= 1 : index <= frontier();
     }
 
-    private String lockedMessage(int index) {
-        Lesson next = Lessons.ALL.get(frontier());
-        String pass = "reach " + Math.round(PASS) + "% efficiency on lesson " + (frontier() + 1)
-                + ", " + next.title();
-        return Lessons.ALL.get(index).isMix() ? "The mixes are locked: " + pass + " first"
-                : "Lesson " + (index + 1) + " is locked: " + pass + " to open the next one";
+    /** Whether the lesson on screen can't be played yet. */
+    boolean locked() {
+        return !unlocked(settings.lesson);
+    }
+
+    /** What it takes to play a locked lesson. */
+    String lockedMessage(int index) {
+        int last = Math.max(0, Lessons.ALL.get(index).isMix() ? 0 : index - 1);
+        return (Lessons.ALL.get(index).isMix() ? "The mixes are" : "Lesson " + (index + 1)
+                + " is") + " locked: reach " + Math.round(PASS) + "% efficiency on lesson "
+                + (last + 1) + ", " + Lessons.ALL.get(last).title() + ", to play it";
+    }
+
+    /** Called instead of beginning a locked lesson: says what it takes. */
+    void refuseLocked() {
+        message = lockedMessage(settings.lesson);
+        refresh();
     }
 
     /** Erases every result, which locks the lessons again. */
