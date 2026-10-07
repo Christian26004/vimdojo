@@ -24,6 +24,7 @@ final class ChallengeView extends JComponent {
     private static final float FONT_SIZE = 22f;
     private static final int LINE_HEIGHT = 34;
     private static final int PAD = 22;
+    private static final int PROMPT_LINE = 26;
     private static final int REMINDER_GAP = 24;
     private static final int REMINDER_ROW = 28;
     // The introduction card's layout is the same for every lesson.
@@ -299,9 +300,12 @@ final class ChallengeView extends JComponent {
         }
         int editorHeight = rows * LINE_HEIGHT + PAD * 2 - 6;
         int goalHeight = goal.length == 0 ? 0 : goal.length * LINE_HEIGHT + PAD * 2 + 12;
-        return new int[] {Math.max(charW * 3 + widest * charW + PAD * 2, 540),
-                78 + editorHeight + (goal.length == 0 ? 0 : 14 + goalHeight), editorHeight,
-                goalHeight};
+        int width = Math.max(charW * 3 + widest * charW + PAD * 2, 540);
+        // A long prompt, such as a guided hint, wraps; the buffer moves down to make room.
+        int promptExtra = (Paint.wrap(g, task.prompt(), width, 18f).size() - 1) * PROMPT_LINE;
+        return new int[] {width, 78 + promptExtra + editorHeight
+                + (goal.length == 0 ? 0 : 14 + goalHeight), editorHeight, goalHeight,
+                promptExtra};
     }
 
     /** Progress dots, prompt, the buffer in its panel, and the goal: one task of a run. */
@@ -336,11 +340,15 @@ final class ChallengeView extends JComponent {
                 g.fillOval(dx, top, 10, 10);
             }
         }
-        Paint.prose(g, task.prompt(), left, top + 52, 18f, t.text());
+        int promptY = top + 52;
+        for (String line : Paint.wrap(g, task.prompt(), width, 18f)) {
+            Paint.prose(g, line, left, promptY, 18f, t.text());
+            promptY += PROMPT_LINE;
+        }
 
         // The buffer.
         boolean done = run.waiting();
-        int editorTop = top + 78;
+        int editorTop = top + 78 + size[4];
         Paint.panel(g, left, editorTop, width, editorHeight);
         if (done) {
             g.setColor(t.accent());

@@ -134,6 +134,6 @@ final class Run {
             totalMillis += millis[i];
         }
         return new Attempt(timestamp, lesson.id(), totalMillis / 1000.0, totalKeys, par,
-                tasks.size());
+                tasks.size(), guided);
     }
 }

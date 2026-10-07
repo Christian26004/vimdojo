@@ -94,14 +94,20 @@ final class History {
         return attempts.stream().filter(a -> a.lesson().equals(lesson)).count();
     }
 
+    /** The best practice run: guided runs, with every key given, don't count. */
     OptionalDouble bestEfficiency(String lesson) {
-        return attempts.stream().filter(a -> a.lesson().equals(lesson))
+        return attempts.stream().filter(a -> a.lesson().equals(lesson) && !a.guided())
                 .mapToDouble(Attempt::efficiency).max();
     }
 
     OptionalDouble bestSeconds(String lesson) {
-        return attempts.stream().filter(a -> a.lesson().equals(lesson))
+        return attempts.stream().filter(a -> a.lesson().equals(lesson) && !a.guided())
                 .mapToDouble(Attempt::seconds).min();
+    }
+
+    /** Whether a lesson has been run, but only guided. */
+    boolean guidedOnly(String lesson) {
+        return runs(lesson) > 0 && bestEfficiency(lesson).isEmpty();
     }
 
     /**
@@ -122,7 +128,8 @@ final class History {
         for (int i = attempts.size() - 1; i >= 0; i--) {
             Attempt a = attempts.get(i);
             Lesson lesson = Lessons.byId(a.lesson());
-            if (lesson != null && !lesson.isMix() && !logged.contains(a.lesson())) {
+            if (lesson != null && !lesson.isMix() && !a.guided()
+                    && !logged.contains(a.lesson())) {
                 List<Double> list = recent.computeIfAbsent(a.lesson(), k -> new ArrayList<>());
                 if (list.size() < 3) {
                     list.add(a.efficiency());

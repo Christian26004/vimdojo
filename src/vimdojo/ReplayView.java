@@ -23,6 +23,7 @@ import javax.swing.Timer;
  */
 final class ReplayView extends JComponent {
     private static final int WIDTH = 560;
+    private static final int PROMPT_LINE = 22;
     private static final int PAD = 24;
     private static final int LINE_HEIGHT = 31;
     private static final int KEY_ROW = 30;
@@ -219,9 +220,20 @@ final class ReplayView extends JComponent {
         return rows;
     }
 
+    /** The task's prompt, wrapped to the window: a guided hint can run to a few lines. */
+    private List<String> promptLines() {
+        java.awt.image.BufferedImage scratch = new java.awt.image.BufferedImage(1, 1,
+                java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = Theme.prep(scratch.createGraphics());
+        List<String> lines = Paint.wrap(g, run.tasks().get(task).prompt(), WIDTH - PAD * 2, 15f);
+        g.dispose();
+        return lines;
+    }
+
     private int height() {
         Task t = run.tasks().get(task);
-        return PAD + 16 + 40 + bufferHeight() + 40 + keyRows(perKey(t.solution())) * KEY_ROW + 30
+        return PAD + 16 + 40 + (promptLines().size() - 1) * PROMPT_LINE + bufferHeight() + 40
+                + keyRows(perKey(t.solution())) * KEY_ROW + 30
                 + keyRows(Paint.chunks(Keys.notation(run.typed(task)))) * KEY_ROW + PAD - 8;
     }
 
@@ -256,8 +268,11 @@ final class ReplayView extends JComponent {
         g.setColor(vim.mode() == Vim.Mode.NORMAL ? t.sub() : t.accent());
         g.drawString(mode.toUpperCase(), x + labelWidth + 16, y);
         y += 30;
-        Paint.prose(g, current.prompt(), x, y, 15f, t.text());
-        y += 18;
+        for (String line : promptLines()) {
+            Paint.prose(g, line, x, y, 15f, t.text());
+            y += PROMPT_LINE;
+        }
+        y += 18 - PROMPT_LINE;
 
         // The task's text, with the par keys acting on it.
         double scale = bufferScale();

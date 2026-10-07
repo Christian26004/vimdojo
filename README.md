@@ -69,11 +69,13 @@ inside `run.bat` can be typed by hand.
   your first lesson. `:tour` shows it again.
 - Each lesson opens on an introduction card that lists its keys and plays a demonstration:
   the lesson's own tasks solved one key at a time, with each key shown as it is pressed.
-- The first run of a lesson is **guided**: each task says exactly which keys to use. Every run
-  after that is **practice**: tasks drawn at random from the lesson, saying only what to do,
-  with the lesson's keys listed along the bottom. `:guided` brings the guided version back.
+- The first run of a lesson is **guided**: each task explains which keys fit and why, leaving
+  the order and count to you. Every run after that is **practice**: tasks drawn at random from
+  the lesson, saying only what to do, with the lesson's keys listed along the bottom.
+  `:guided` brings the guided version back.
 - Lessons unlock one at a time. Only lesson 1 can be played at first; scoring at least **50%
-  efficiency** on a lesson unlocks the next one. Locked lessons are greyed out, but you can
+  efficiency in practice** on a lesson unlocks the next one. Guided runs don't count toward
+  unlocking or bests. Locked lessons are greyed out, but you can
   still open them to read their keys and watch the demonstration; they just can't be begun.
   The results screen says when the next one unlocks. Erasing your progress locks them again.
 - At the end of the list, **random mix** gives ten tasks from lessons picked at random, and

@@ -159,15 +159,22 @@ public final class NavTest {
         check(app.lessonIndex() == 1 && app.inIntro() && app.locked(),
                 "a locked lesson still opens, to look at");
         pressOn(view, KeyEvent.VK_ENTER);
-        check(app.inIntro() && app.message().equals("requires 50% or more on previous lesson"),
+        check(app.inIntro()
+                && app.message().equals("requires 50% or more on previous lesson in practice"),
                 "but enter doesn't begin it: " + app.message());
         command(Integer.toString(random + 1));
         pressOn(view, KeyEvent.VK_ENTER);
-        check(app.inIntro() && app.message().equals("requires 50% or more on lesson 1"),
+        check(app.inIntro()
+                && app.message().equals("requires 50% or more on lesson 1 in practice"),
                 "nor a mix");
         command("1");
         check(!app.locked(), "lesson 1 is never locked");
 
+        // Guided runs give every key away, so even a perfect one unlocks nothing.
+        app.history().add(new Attempt(0L, "hjkl", 10, 30, 30, 8, true), java.util.List.of());
+        check(!app.unlocked(1) && app.history().guidedOnly("hjkl")
+                && app.history().bestEfficiency("hjkl").isEmpty(),
+                "a 100% guided run doesn't unlock the next lesson or count as a best");
         app.history().add(new Attempt(1L, "hjkl", 10, 100, 40, 8), java.util.List.of());
         check(!app.unlocked(1), "40% is not enough");
         app.history().add(new Attempt(2L, "hjkl", 10, 100, 50, 8), java.util.List.of());
@@ -176,6 +183,23 @@ public final class NavTest {
         command("2");
         pressOn(view, KeyEvent.VK_ENTER);
         check(app.lessonIndex() == 1 && !app.inIntro(), "lesson 2 can be played now");
+
+        // After a guided run, enter on the results goes on to the same lesson's practice.
+        app.startLesson(1, true);
+        Run guided = app.run();
+        check(guided.guided(), ":guided gives a guided run");
+        long now = 0;
+        while (!guided.finished()) {
+            for (char k : Keys.parse(guided.task().solution()).toCharArray()) {
+                guided.key(k, now += 100);
+            }
+            guided.advance();
+        }
+        app.finishRun();
+        check(!app.unlocked(2), "a perfect guided run of lesson 2 doesn't unlock lesson 3");
+        app.continueFromResults();
+        check(app.lessonIndex() == 1 && !app.run().guided() && app.inIntro(),
+                "enter after it starts lesson 2's practice");
 
         eraseDialog();
         check(!app.unlocked(1) && app.lessonIndex() == 0,

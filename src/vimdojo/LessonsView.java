@@ -144,6 +144,10 @@ final class LessonsView extends JComponent {
                 g.setFont(Theme.ui(14f));
                 g.setColor(t.sub());
                 g.drawString("locked", bestX, baseline);
+            } else if (app.history().guidedOnly(lesson.id())) {
+                g.setFont(Theme.ui(14f));
+                g.setColor(t.sub());
+                g.drawString("guided only", bestX, baseline);
             } else if (efficiency.isPresent()) {
                 g.setFont(Theme.bold(15f));
                 g.setColor(t.text());

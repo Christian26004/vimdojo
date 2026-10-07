@@ -211,6 +211,10 @@ public final class LessonTest {
         check(new Attempt(1L, "words", 1, 20, 30, 8).efficiency() == 150,
                 "beating par scores above 100");
         check(Attempt.fromLine(attempt.toLine()).equals(attempt), "history line round trip");
+        Attempt guided = new Attempt(2L, "words", 9.5, 30, 30, 8, true);
+        check(Attempt.fromLine(guided.toLine()).equals(guided), "guided runs round trip");
+        check(!Attempt.fromLine("3\twords\t9.50\t30\t30\t8").guided(),
+                "older lines, without the field, are practice");
         History.TaskResult task = new History.TaskResult(5L, "objects", 8, 6, 3.25);
         check(History.TaskResult.fromLine(task.toLine()).equals(task) && task.efficiency() == 75,
                 "task line round trip");

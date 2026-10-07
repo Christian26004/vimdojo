@@ -295,8 +295,17 @@ public final class App {
     /** Called instead of beginning a locked lesson: says what it takes. */
     void refuseLocked() {
         message = "requires " + Math.round(PASS) + "% or more on "
-                + (Lessons.ALL.get(settings.lesson).isMix() ? "lesson 1" : "previous lesson");
+                + (Lessons.ALL.get(settings.lesson).isMix() ? "lesson 1" : "previous lesson")
+                + " in practice";
         refresh();
+    }
+
+    /**
+     * Enter on the results: after a guided run, the same lesson as practice, which is what
+     * unlocks the next; otherwise the next lesson.
+     */
+    void continueFromResults() {
+        startLesson(run.guided() ? settings.lesson : settings.lesson + 1);
     }
 
     /** Erases every result, which locks the lessons again. */
@@ -383,7 +392,8 @@ public final class App {
         Attempt attempt = run.attempt(now);
         OptionalDouble efficiency = history.bestEfficiency(attempt.lesson());
         OptionalDouble seconds = history.bestSeconds(attempt.lesson());
-        history.add(attempt, run.results(now));
+        // A guided run's tasks say how to do them, so they say nothing about weak spots.
+        history.add(attempt, run.guided() ? List.of() : run.results(now));
         resultView.show(run, attempt, efficiency, seconds);
         show("result", resultView);
     }

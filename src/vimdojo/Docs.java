@@ -151,16 +151,20 @@ final class Docs {
                 + "found a shorter way than par."},
         {"guided and practice", "how a lesson changes after your first time",
             "The first time you take a lesson it is guided: eight short tasks in teaching "
-                + "order, each saying exactly which keys to use. The introduction card says "
-                + "GUIDED at the top.\n"
+                + "order, each explaining which keys fit and why. The order and the count are "
+                + "left to you. The introduction card says GUIDED at the top.\n"
+                + "A guided run doesn't count toward bests or unlocking; after it, `enter` on "
+                + "the results starts the lesson's practice.\n"
                 + "Every time after that it is practice: eight tasks drawn at random from the "
                 + "lesson, with new words and positions each time. The tasks only say what to "
                 + "do, not how; the lesson's keys are listed along the bottom. The card says "
                 + "PRACTICE. `:guided` brings the guided version back whenever you like."},
-        {"locked lessons", "each lesson opens at 50% on the one before",
+        {"locked lessons", "each lesson opens at 50% in practice on the one before",
             "Lessons unlock one at a time. At first only lesson 1 can be played. When you "
-                + "finish a lesson with at least 50% efficiency, the next one unlocks, and every "
-                + "lesson you have unlocked stays that way.\n"
+                + "finish a lesson's practice with at least 50% efficiency, the next one "
+                + "unlocks, and every lesson you have unlocked stays that way. Guided runs don't "
+                + "count: they tell you which keys to use, so they show nothing about what you "
+                + "know.\n"
                 + "Locked lessons are greyed out, but you can still open them to see their keys "
                 + "and watch the demonstration. Pressing `enter` on one doesn't start it; the "
                 + "bottom bar says what it requires instead. The results screen tells you when "

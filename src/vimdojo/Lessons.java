@@ -149,7 +149,9 @@ final class Lessons {
             String rest = " " + pick(r, NOUN) + " " + pick(r, VERB);
             String typo = word.substring(0, i + 1) + word.substring(i);
             return Task.edit("delete the extra `" + word.charAt(i) + "`",
-                "the cursor is on the extra `" + word.charAt(i) + "`: press `x` to delete it",
+                "`x` deletes the one character under the cursor. Here the cursor already sits on "
+                    + "the "
+                    + "extra letter",
                 at("the " + typo + rest, 4 + i), "the " + word + rest, "x");
         },
         r -> {
@@ -158,14 +160,17 @@ final class Lessons {
             String goal = "the " + word + " " + pick(r, NOUN) + " " + pick(r, VERB);
             String start = with(goal, 4 + i, absentLetter(r, goal));
             return Task.edit("fix the wrong letter",
-                "the cursor is on the wrong letter: press `r`, then the right letter",
+                "`r` and then a letter replaces the character under the cursor with that letter, "
+                    + "without going into insert mode. The cursor is already on the wrong one",
                 at(start, 4 + i), goal, "r" + word.charAt(i));
         },
         r -> {
             String noun = pick(r, NOUN);
             String goal = pick(r, ADJ) + " " + noun + " " + pick(r, VERB);
             return Task.edit("remove the stray `!` at the end",
-                "`$` jumps to the end of the line, then `x` deletes the `!`",
+                "`$` jumps to the last character of the line from anywhere on it, and `x` deletes "
+                    + "the "
+                    + "character under the cursor",
                 "|" + goal + "!", goal, "$x");
         },
         r -> {
@@ -175,8 +180,8 @@ final class Lessons {
             String rest = " the " + pick(r, ADJ) + " " + pick(r, NOUN);
             String typo = word.substring(0, i + 1) + word.substring(i);
             return Task.edit("find the doubled letter and delete one",
-                "`f" + word.charAt(i) + "` jumps onto the doubled `" + word.charAt(i)
-                    + "`, then `x` deletes it",
+                "`f` and a letter jump onto the next copy of that letter on the line, quicker than "
+                    + "stepping there with `l`. Get onto either of the doubled letters, then `x`",
                 "|" + verb + " " + typo + rest, verb + " " + word + rest,
                 "f" + word.charAt(i) + "x");
         },
@@ -185,7 +190,8 @@ final class Lessons {
             int from = 1 + r.nextInt(8);
             int to = from + 1;
             return Task.edit("make the number `" + to + "`",
-                "`$` reaches the number, then `r" + to + "` replaces it",
+                "The number is the last thing on the line, so `$` reaches it in one key, and `r` "
+                    + "swaps one character for another",
                 "|" + name + " = " + from, name + " = " + to, "$r" + to);
         },
         r -> {
@@ -195,8 +201,9 @@ final class Lessons {
             char wrong = absentLetter(r, goal);
             String typo = with(word, 1, wrong);
             return Task.edit("fix the word `" + typo + "`",
-                "`f" + wrong + "` jumps onto the wrong letter, then `r" + word.charAt(1)
-                    + "` fixes it",
+                "`f` and a letter jump straight onto a letter you can name, like the wrong one "
+                    + "here, "
+                    + "and `r` then replaces it",
                 "|" + goal.replace(" " + word + " ", " " + typo + " "), goal,
                 "f" + wrong + "r" + word.charAt(1));
         },
@@ -205,7 +212,9 @@ final class Lessons {
             String noise = pick(r, "#", "*", "~", "%").repeat(n);
             String noun = pick(r, NOUN);
             return Task.edit("remove the `" + noise + "`",
-                "a count repeats `x`: `" + n + "x` removes all " + n + " at once",
+                "A number typed before a command repeats it, so a number before `x` deletes that "
+                    + "many "
+                    + "characters at once",
                 "feed |" + noise + "the " + noun, "feed the " + noun, n + "x");
         },
         r -> {
@@ -215,8 +224,9 @@ final class Lessons {
             char wrong = absentLetter(r, goal);
             String start = with(goal, 4 + i, wrong) + goal.charAt(goal.length() - 1);
             return Task.edit("two typos: fix both",
-                "`f" + wrong + "` and `r" + word.charAt(i) + "` fix the wrong letter, then `$x`"
-                    + " removes the doubled one at the end",
+                "One fix at a time: `f` reaches a letter you name and `r` replaces it; `$` "
+                    + "reaches the "
+                    + "end of the line, where `x` can delete",
                 "|" + start, goal, "f" + wrong + "r" + word.charAt(i) + "$x");
         });
 
@@ -226,7 +236,9 @@ final class Lessons {
             int i = 1 + r.nextInt(word.length() - 2);
             String rest = " " + pick(r, NOUN);
             return Task.edit("add the missing `" + word.charAt(i) + "`",
-                "press `i`, type the missing `" + word.charAt(i) + "`, then `esc`",
+                "`i` starts typing just before the character under the cursor, so the missing "
+                    + "letter "
+                    + "lands in front of it. `esc` stops typing",
                 at("the " + without(word, i) + rest, 4 + i), "the " + word + rest,
                 "i" + word.charAt(i) + "<esc>");
         },
@@ -235,7 +247,9 @@ final class Lessons {
             int i = 1 + r.nextInt(word.length() - 1);
             String rest = " " + pick(r, NOUN);
             return Task.edit("add the missing `" + word.charAt(i) + "`",
-                "`a` types after the cursor: `a`, then `" + word.charAt(i) + "`, then `esc`",
+                "`a` (append) starts typing just after the character under the cursor: right when "
+                    + "the "
+                    + "missing letter belongs after it. `esc` stops typing",
                 at("the " + without(word, i) + rest, 4 + i - 1), "the " + word + rest,
                 "a" + word.charAt(i) + "<esc>");
         },
@@ -243,7 +257,9 @@ final class Lessons {
             String goal = pick(r, "hello", "thanks", "see you", "good night") + " "
                     + pick(r, PEOPLE);
             return Task.edit("add a `!` at the end",
-                "the cursor is on the last letter: `a`, then `!`, then `esc`",
+                "The `!` belongs after the last letter, where the cursor is, so this is a job for "
+                    + "`a`, "
+                    + "which types after the cursor rather than before it",
                 at(goal, goal.length() - 1), goal + "!", "a!<esc>");
         },
         r -> {
@@ -251,7 +267,9 @@ final class Lessons {
             String adj = pick(r, ADJ);
             String noun = pick(r, NOUN);
             return Task.edit("add the word `" + extra + "`",
-                "`i` types before the cursor: type `" + extra + "` and a space, then `esc`",
+                "`i` types in front of the character under the cursor. The new word goes in front "
+                    + "of "
+                    + "this one, so remember the space between them",
                 "the |" + adj + " " + noun, "the " + extra + " " + adj + " " + noun,
                 "i" + extra + " <esc>");
         },
@@ -259,7 +277,9 @@ final class Lessons {
             String[] adj = several(r, ADJ, 2);
             String noun = pick(r, NOUN);
             return Task.edit("add the missing word `" + adj[0] + "`",
-                "`w` moves to the next word, then `i`, type `" + adj[0] + "` and a space, `esc`",
+                "Move to where the word goes first: `w` jumps to the start of the next word. Then "
+                    + "`i` "
+                    + "types in front of it",
                 "|the " + adj[1] + " " + noun, "the " + adj[0] + " " + adj[1] + " " + noun,
                 "wi" + adj[0] + " <esc>");
         },
@@ -267,14 +287,18 @@ final class Lessons {
             String first = pick(r, "hello", "sorry", "thanks", "okay", "well", "listen");
             String second = pick(r, NOUN);
             return Task.edit("add a comma after `" + first + "`",
-                "`e` reaches the end of the word, then `a,` and `esc`",
+                "The comma belongs right after the word's last letter: `e` jumps to the end of a "
+                    + "word, "
+                    + "and `a` types after the cursor",
                 "|" + first + " " + second, first + ", " + second, "ea,<esc>");
         },
         r -> {
             String[] n = several(r, NAME, 3);
             String op = pick(r, "*", "+", "-", "/");
             return Task.edit("put a `" + op + "` between " + n[1] + " and " + n[2],
-                "`4w` jumps to " + n[2] + ", then `i`, type `" + op + "` and a space, `esc`",
+                "A number before `w` jumps that many words at once. Count the words to where the "
+                    + "sign "
+                    + "goes, then type in front of that word with `i`",
                 "|let " + n[0] + " = " + n[1] + " " + n[2] + ";",
                 "let " + n[0] + " = " + n[1] + " " + op + " " + n[2] + ";",
                 "4wi" + op + " <esc>");
@@ -285,7 +309,9 @@ final class Lessons {
             int digit = 1 + r.nextInt(9);
             String goal = name + " " + op + "= " + digit + "0";
             return Task.edit("make it `" + goal + "`",
-                "two insertions: `wi" + op + "` and `esc`, then `$a0` and `esc`",
+                "Two spots need text: before the `=`, which `w` reaches, and after the last "
+                    + "digit, which "
+                    + "`$` reaches. `i` types before the cursor, `a` after it",
                 "|" + name + " = " + digit, goal, "wi" + op + "<esc>$a0<esc>");
         });
 
@@ -293,26 +319,32 @@ final class Lessons {
         r -> {
             String line = "return " + pick(r, NAME);
             return Task.edit("add `;` at the end of the line",
-                "`A` types at the end of the line: `A`, then `;`, then `esc`",
+                "`A` starts typing at the very end of the line wherever the cursor is, so there "
+                    + "is no "
+                    + "need to move there first",
                 "|" + line, line + ";", "A;<esc>");
         },
         r -> {
             String word = pick(r, "let", "const", "var");
             String line = assignment(r, pick(r, NAME)) + ";";
             return Task.edit("add `" + word + "` at the start of the line",
-                "`I` types at the start of the line: `I`, then `" + word + "` and a space, `esc`",
+                "`I` starts typing at the start of the line's text wherever the cursor is, the "
+                    + "opposite "
+                    + "end from `A`",
                 at(line, line.indexOf('=')), word + " " + line, "I" + word + " <esc>");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             return Task.edit("add `" + s[2] + "` as a new line after `" + s[1] + "`",
-                "`o` opens a line below: `o`, type `" + s[2] + "`, then `esc`",
+                "`o` opens a new, empty line below the cursor's line and starts typing on it, all "
+                    + "in "
+                    + "one key",
                 s[0] + "\n|" + s[1] + "\n" + s[3], String.join("\n", s), "o" + s[2] + "<esc>");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             return Task.edit("add `" + s[0] + "` as a new line at the top",
-                "`O` opens a line above: `O`, type `" + s[0] + "`, then `esc`",
+                "`O`, the capital, opens a new line above the cursor's line instead of below it",
                 "|" + s[1] + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2], "O" + s[0] + "<esc>");
         },
         r -> {
@@ -320,21 +352,24 @@ final class Lessons {
             String first = assignment(r, n[0]);
             String second = assignment(r, n[1]);
             return Task.edit("add `;` to the end of the second line",
-                "`j` moves down, then `A;` and `esc`",
+                "The `;` belongs at the end of the line below: `j` moves down a line, and `A` "
+                    + "types at "
+                    + "the end of whatever line the cursor is on",
                 "|" + first + "\n" + second, first + "\n" + second + ";", "jA;<esc>");
         },
         r -> {
             String comment = "// " + pick(r, "setup", "inputs", "defaults", "helpers");
             String line = assignment(r, pick(r, NAME));
             return Task.edit("add the comment `" + comment + "` above",
-                "`O` opens a line above: type `" + comment + "`, then `esc`",
+                "A new line above the current one is exactly what `O` makes, ready to type into",
                 "|" + line, comment + "\n" + line, "O" + comment + "<esc>");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             return Task.edit("add a line above and a line below",
-                "`O" + s[0] + "` and `esc` adds the line above, `j` comes back down, then `o"
-                    + s[2] + "` and `esc`",
+                "`O` opens a line above and `o` one below. After adding the first, the cursor is "
+                    + "on "
+                    + "the new line, so `j` takes you back to the middle one",
                 "|" + s[1], s[0] + "\n" + s[1] + "\n" + s[2],
                 "O" + s[0] + "<esc>jo" + s[2] + "<esc>");
         },
@@ -342,7 +377,8 @@ final class Lessons {
             String name = pick(r, NAME);
             String func = pick(r, FUNC);
             return Task.edit("make it `const " + name + " = " + func + "();`",
-                "add to both ends: `Iconst ` and `esc`, then `A();` and `esc`",
+                "Both ends of the line need text: `I` types at its start and `A` at its end, from "
+                    + "wherever the cursor is",
                 name + " |= " + func, "const " + name + " = " + func + "();",
                 "Iconst <esc>A();<esc>");
         });
@@ -355,7 +391,9 @@ final class Lessons {
             String rest = " " + pick(r, NOUN);
             String typo = word.substring(0, i) + word.charAt(i - 1) + word.substring(i);
             return Task.edit("remove the doubled letter",
-                "`X` deletes the letter before the cursor",
+                "`X`, the capital, deletes the character before the cursor, like backspace, where "
+                    + "`x` "
+                    + "deletes the one under it. The cursor is just past the extra letter",
                 at("the " + typo + rest, 4 + i + 1), "the " + word + rest, "X");
         },
         r -> {
@@ -364,20 +402,26 @@ final class Lessons {
             String mark = pick(r, "!", "?", "_");
             int value = 1 + r.nextInt(9);
             return Task.edit("remove the `" + mark.repeat(n) + "`",
-                "`" + n + "X` deletes the " + n + " characters before the cursor",
+                "`X` deletes the character to the left of the cursor, and a number before it "
+                    + "deletes "
+                    + "that many in one go",
                 name + mark.repeat(n) + "| = " + value, name + " = " + value, n + "X");
         },
         r -> {
             String[] it = several(r, ITEM, 2);
             return Task.edit("replace the `&` with `and`",
-                "`s` deletes the `&` and starts typing: type `and`, then `esc`",
+                "`s` deletes the character under the cursor and starts typing, so one character "
+                    + "can "
+                    + "become several. `r` couldn't: it swaps one character for one",
                 it[0] + " |& " + it[1], it[0] + " and " + it[1], "sand<esc>");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             String typo = "" + s[1].charAt(1) + s[1].charAt(0) + s[1].substring(2);
             return Task.edit("rewrite the middle line as `" + s[1] + "`",
-                "`S` empties the line and starts typing: `" + s[1] + "`, then `esc`",
+                "`S` empties the whole line and starts typing, for when a line is quicker to type "
+                    + "again "
+                    + "than to fix letter by letter",
                 s[0] + "\n|" + typo + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2],
                 "S" + s[1] + "<esc>");
         },
@@ -385,13 +429,15 @@ final class Lessons {
             String first = "the " + pick(r, ADJ);
             String second = pick(r, NOUN) + " " + pick(r, VERB);
             return Task.edit("join the two lines into one",
-                "`J` joins the next line onto this one, with a space between",
+                "`J` pulls the line below up onto the end of this one, with a space between them",
                 "|" + first + "\n" + second, first + " " + second, "J");
         },
         r -> {
             String[] it = several(r, ITEM, 3);
             return Task.edit("make the three lines one",
-                "`J` twice joins all three",
+                "`J` joins only the next line onto this one, so gathering three lines takes it "
+                    + "more "
+                    + "than once",
                 "|" + String.join("\n", it), String.join(" ", it), "JJ");
         },
         r -> {
@@ -399,15 +445,17 @@ final class Lessons {
             String rest = " " + pick(r, VERB) + " home";
             String upper = Character.toUpperCase(name.charAt(0)) + name.substring(1);
             return Task.edit("capitalize `" + name + "`",
-                "`~` switches the letter under the cursor between lower and upper case",
+                "`~` flips the letter under the cursor between lower and upper case, then steps "
+                    + "right",
                 "|" + name + rest, upper + rest, "~");
         },
         r -> {
             String word = pick(r, "todo", "note", "fixme", "bug");
             String rest = ": " + pick(r, FUNC) + " the " + pick(r, ITEM);
             return Task.edit("make `" + word + "` all capitals",
-                "a count works with `~`: `" + word.length() + "~` switches " + word.length()
-                    + " letters",
+                "`~` flips one letter and steps right, so a number before it flips that many "
+                    + "letters "
+                    + "in a row. Count the letters",
                 "|" + word + rest, word.toUpperCase() + rest, word.length() + "~");
         });
 
@@ -415,7 +463,9 @@ final class Lessons {
         r -> {
             String rest = pick(r, ADJ) + " " + pick(r, NOUN);
             return Task.edit("delete the extra word",
-                "`dw` deletes from the cursor to the next word",
+                "`d` deletes as far as the motion after it moves. `w` moves to the next word, so "
+                    + "`d` "
+                    + "with `w` deletes the word and its space",
                 "the |" + pick(r, EXTRA) + " " + rest, "the " + rest, "dw");
         },
         r -> {
@@ -424,33 +474,40 @@ final class Lessons {
                     assignment(r, n[1])));
             String goal = String.join("\n", lines);
             lines.add(r.nextInt(3), "|" + pick(r, JUNK));
-            return Task.edit("delete the junk line", "`dd` deletes the whole line",
+            return Task.edit("delete the junk line",
+                "Pressing an operator twice works on the whole line, so `d` twice deletes the "
+                    + "line wherever the cursor is in it",
                 String.join("\n", lines), goal, "dd");
         },
         r -> {
             String line = assignment(r, pick(r, NAME)) + ";";
             return Task.edit("delete the comment",
-                "`D` deletes from the cursor to the end of the line",
+                "`D` deletes from the cursor to the end of the line, the same as `d` with `$`",
                 line + "| // " + pick(r, "temporary", "fix later", "old value", "remove"), line,
                 "D");
         },
         r -> {
             String call = pick(r, FUNC) + "(" + pick(r, NAME) + ")";
             return Task.edit("delete the label before the call",
-                "`d` takes any motion: `d0` deletes back to the start of the line",
+                "`d` works with any motion. `0` is the motion to the start of the line, so the two "
+                    + "together delete everything before the cursor",
                 pick(r, "debug", "todo", "note", "temp") + ": |" + call, call, "d0");
         },
         r -> {
             String[] n = several(r, NAME, 4);
             String keep = pick(r, FUNC) + "(" + n[0] + ", " + n[1];
             return Task.edit("keep only the first two arguments",
-                "`dt)` deletes up to the closing bracket",
+                "`t)` is the motion that stops just before the next `)`. After `d` it deletes up "
+                    + "to "
+                    + "there and leaves the bracket",
                 keep + "|, " + n[2] + ", " + n[3] + ")", keep + ")", "dt)");
         },
         r -> {
             String[] keep = several(r, ITEM, 2);
             return Task.edit("delete both junk lines",
-                "`dj` deletes this line and the one below",
+                "`j` moves down a line. As the motion after `d` it deletes whole lines: this one "
+                    + "and "
+                    + "the one below",
                 keep[0] + "\n|junk\nmore junk\n" + keep[1], keep[0] + "\n" + keep[1], "dj");
         },
         r -> {
@@ -461,7 +518,8 @@ final class Lessons {
                 start.append(i == n - 1 ? "|" : "").append("junk ").append(i + 1).append("\n");
             }
             return Task.edit("delete every junk line",
-                "`dgg` deletes from this line up to the first",
+                "`gg` moves to the first line. After `d` it deletes every line from here up to the "
+                    + "top",
                 start + keep, keep, "dgg");
         },
         r -> {
@@ -471,7 +529,7 @@ final class Lessons {
                 start.append(i == 0 ? "\n|" : "\n").append("junk ").append(i + 1);
             }
             return Task.edit("delete everything below the first line",
-                "`dG` deletes from this line to the end of the text",
+                "`G` moves to the last line. After `d` it deletes every line from here to the end",
                 start.toString(), header, "dG");
         });
 
@@ -480,13 +538,15 @@ final class Lessons {
             String[] adj = several(r, ADJ, 3);
             String rest = " " + adj[2] + " " + pick(r, NOUN);
             return Task.edit("make `" + adj[1] + "` say `" + adj[0] + "`",
-                "`cw` deletes the word and starts typing: `" + adj[0] + "`, then `esc`",
+                "`c` deletes what a motion covers and starts typing. With `w` that's the rest of "
+                    + "the "
+                    + "word; unlike `d` with `w`, the space after it stays",
                 "the |" + adj[1] + rest, "the " + adj[0] + rest, "cw" + adj[0] + "<esc>");
         },
         r -> {
             String[] n = several(r, NAME, 3);
             return Task.edit("make it return `" + n[2] + "`",
-                "`C` changes the rest of the line: type `" + n[2] + ";`, then `esc`",
+                "`C` deletes from the cursor to the end of the line and starts typing there",
                 "return |" + n[0] + " + " + n[1] + ";", "return " + n[2] + ";",
                 "C" + n[2] + ";<esc>");
         },
@@ -494,7 +554,7 @@ final class Lessons {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             String typo = "" + s[1].charAt(1) + s[1].charAt(0) + s[1].substring(2);
             return Task.edit("fix `" + typo + "`",
-                "`cc` rewrites the whole line: type `" + s[1] + "`, then `esc`",
+                "Pressing `c` twice changes the whole line: it is emptied and you type it again",
                 s[0] + "\n|" + typo + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2],
                 "cc" + s[1] + "<esc>");
         },
@@ -503,7 +563,9 @@ final class Lessons {
                     2);
             String property = pick(r, "color", "border", "fill");
             return Task.edit("make the value `" + c[1] + "`",
-                "`ct;` changes up to the semicolon: type `" + c[1] + "`, then `esc`",
+                "`t;` stops just before the `;`, so after `c` it replaces everything up to it and "
+                    + "keeps "
+                    + "the rest of the line",
                 property + ": |" + c[0] + "; /* keep */", property + ": " + c[1] + "; /* keep */",
                 "ct;" + c[1] + "<esc>");
         },
@@ -511,7 +573,9 @@ final class Lessons {
             String func = pick(r, FUNC);
             String[] n = several(r, NAME, 2);
             return Task.edit("make the argument `" + n[1] + "`",
-                "`ct)` changes up to the bracket: type `" + n[1] + "`, then `esc`",
+                "`t)` stops just before the bracket, so with `c` it replaces the argument and "
+                    + "keeps "
+                    + "the bracket",
                 func + "(|" + n[0] + ")", func + "(" + n[1] + ")", "ct)" + n[1] + "<esc>");
         },
         r -> {
@@ -519,8 +583,9 @@ final class Lessons {
                 "final"}, 2);
             String value = pick(r, ITEM);
             return Task.edit("change the label to `" + labels[1] + ":`",
-                "`c0` changes everything before the cursor: type `" + labels[1]
-                    + ": `, then `esc`",
+                "`0` is the motion to the start of the line, so with `c` it replaces everything "
+                    + "before "
+                    + "the cursor",
                 labels[0] + ": |" + value, labels[1] + ": " + value,
                 "c0" + labels[1] + ": <esc>");
         },
@@ -528,7 +593,9 @@ final class Lessons {
             String name = pick(r, NAME);
             int to = 100 + r.nextInt(900);
             return Task.edit("change the number to `" + to + "`",
-                "`$` and `b` reach the number, then `cw" + to + "` and `esc`",
+                "Reach the number first: `$` goes to the end of the line and `b` back to the "
+                    + "start of "
+                    + "the word there. Then `c` with `w` replaces it",
                 "|const " + name + " = " + (10 + r.nextInt(90)) + ";",
                 "const " + name + " = " + to + ";", "$bcw" + to + "<esc>");
         },
@@ -537,8 +604,9 @@ final class Lessons {
             String[] prep = several(r, PREP, 2);
             String middle = " " + pick(r, NOUN) + " " + pick(r, VERB) + " ";
             return Task.edit("two words are wrong: change both",
-                "`2w` and `cw" + adj[2] + "` fix the first; `$b` and `cw" + prep[1]
-                    + "` the last",
+                "Each wrong word needs reaching, then changing. `w`, `$` and `b` get you to a "
+                    + "word's "
+                    + "first letter; `c` with `w` replaces it from there",
                 "|the " + adj[0] + " " + adj[1] + middle + prep[0],
                 "the " + adj[0] + " " + adj[2] + middle + prep[1],
                 "2wcw" + adj[2] + "<esc>$bcw" + prep[1] + "<esc>");
@@ -548,26 +616,33 @@ final class Lessons {
         r -> {
             String line = pick(r, FUNC) + "(" + pick(r, NAME) + ")";
             return Task.edit("duplicate the line",
-                "`yy` copies the line, `p` puts the copy below",
+                "`y` twice copies (yanks) the whole line, and `p` puts a copied line on a new line "
+                    + "below",
                 "|" + line, line + "\n" + line, "yyp");
         },
         r -> {
             String word = pick(r, "very", "so", "too", "far");
             String rest = " " + pick(r, ADJ);
             return Task.edit("say `" + word + "` twice",
-                "`yw` copies the word and its space, `P` puts it before the cursor",
+                "`y` with `w` copies the word and its space. `P` puts a copy before the cursor, "
+                    + "`p` "
+                    + "after it",
                 "|" + word + rest, word + " " + word + rest, "ywP");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             return Task.edit("put the lines in order",
-                "`dd` cuts the line, `p` puts it back below the next one",
+                "Deleting keeps a copy, so `d` twice cuts the line. The cursor then lands on the "
+                    + "next "
+                    + "line, and `p` puts the cut line below that",
                 "|" + s[1] + "\n" + s[0] + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2], "ddp");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             return Task.edit("move `" + s[0] + "` to the top",
-                "`dd` cuts it, `k` moves up, `P` puts it above",
+                "Cut the line, move to the line it belongs above, and `P` puts a cut line above "
+                    + "the "
+                    + "cursor's line",
                 s[1] + "\n|" + s[0] + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2], "ddkP");
         },
         r -> {
@@ -577,20 +652,23 @@ final class Lessons {
                     + word.substring(i + 2);
             String rest = " " + pick(r, NOUN);
             return Task.edit("swap the two letters",
-                "`x` cuts the letter, `p` puts it back after the next one",
+                "`x` cuts a letter, keeping a copy, and the cursor moves onto the next letter. "
+                    + "`p` puts "
+                    + "the copy after that, so the two swap",
                 at("the " + typo + rest, 4 + i), "the " + word + rest, "xp");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             return Task.edit("move `" + s[0] + "` to the top",
-                "`dd` cuts it, `gg` goes to the first line, `P` puts it above",
+                "Cut the line, then `gg` goes to the first line, and `P` puts the cut line above "
+                    + "it",
                 s[1] + "\n" + s[2] + "\n|" + s[0], s[0] + "\n" + s[1] + "\n" + s[2], "ddggP");
         },
         r -> {
             String head = pick(r, NAME) + " list";
             String[] it = several(r, ITEM, 2);
             return Task.edit("copy the first line to the end",
-                "`yy` copies it, `G` goes to the last line, `p` puts it below",
+                "Copy the line, go to the last line with `G`, and `p` puts the copy below it",
                 "|" + head + "\n" + it[0] + "\n" + it[1],
                 head + "\n" + it[0] + "\n" + it[1] + "\n" + head, "yyGp");
         },
@@ -598,8 +676,9 @@ final class Lessons {
             String word = pick(r, ITEM);
             int copies = 2 + r.nextInt(2);
             return Task.edit("make " + (copies + 1) + " rows of `" + word + "`",
-                copies == 2 ? "`yy` copies the line, then `p` twice" : "`yy`, then `3p` puts"
-                    + " three copies",
+                "`y` twice copies the line; each `p` puts another copy, or a number before `p` "
+                    + "puts "
+                    + "that many at once",
                 "|" + word + "\nend", (word + "\n").repeat(copies + 1) + "end",
                 copies == 2 ? "yypp" : "yy3p");
         });
@@ -609,7 +688,8 @@ final class Lessons {
             int n = 2 + r.nextInt(2);
             String rest = pick(r, ADJ) + " " + pick(r, NOUN);
             return Task.edit("delete the " + n + " extra words",
-                "`d" + n + "w` deletes " + n + " words at once",
+                "A number between `d` and `w` stretches the motion over that many words, so one "
+                    + "command deletes them all",
                 "the |" + (pick(r, EXTRA) + " ").repeat(n) + rest, "the " + rest, "d" + n + "w");
         },
         r -> {
@@ -619,14 +699,15 @@ final class Lessons {
                 start.append(i == 0 ? "\n|" : "\n").append("drop ").append(i + 1);
             }
             return Task.edit("delete the " + n + " drop lines",
-                "`" + n + "dd` deletes " + n + " lines",
+                "A number before `dd` deletes that many lines, starting with the cursor's",
                 start + "\nkeep too", "keep\nkeep too", n + "dd");
         },
         r -> {
             String[] adj = several(r, ADJ, 3);
             String noun = " " + pick(r, NOUN);
             return Task.edit("replace both words with `" + adj[2] + "`",
-                "`c2w` changes two words: type `" + adj[2] + "`, then `esc`",
+                "A number between `c` and `w` covers that many words: they are all deleted and you "
+                    + "type the one word that replaces them",
                 "the |" + adj[0] + " " + adj[1] + noun, "the " + adj[2] + noun,
                 "c2w" + adj[2] + "<esc>");
         },
@@ -634,7 +715,7 @@ final class Lessons {
             String[] adj = several(r, ADJ, 4);
             String noun = " " + pick(r, NOUN);
             return Task.edit("replace the three words with `" + adj[3] + "`",
-                "`c3w` changes three words: type `" + adj[3] + "`, then `esc`",
+                "Count the words to replace: a number between `c` and `w` covers them all at once",
                 "the |" + adj[0] + " " + adj[1] + " " + adj[2] + noun, "the " + adj[3] + noun,
                 "c3w" + adj[3] + "<esc>");
         },
@@ -642,13 +723,17 @@ final class Lessons {
             String word = pick(r, "ho", "la", "na", "ha");
             String end = pick(r, "end", "done", "stop");
             return Task.edit("double the `" + word + " " + word + "`",
-                "`y2w` copies two words, `P` puts them before the cursor",
+                "A number before `w` makes `y` copy that many words, and `P` puts a copy before "
+                    + "the "
+                    + "cursor",
                 "|" + word + " " + word + " " + end, (word + " ").repeat(4) + end, "y2wP");
         },
         r -> {
             String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
             return Task.edit("move the first two lines to the bottom",
-                "`2dd` cuts two lines, `j` moves down, `p` puts them below",
+                "A number before `dd` cuts that many lines. Move to the line they belong after, "
+                    + "and `p` "
+                    + "puts them below it",
                 "|" + s[2] + "\n" + s[3] + "\n" + s[0] + "\n" + s[1], String.join("\n", s),
                 "2ddjp");
         },
@@ -656,14 +741,18 @@ final class Lessons {
             String[] n = several(r, NAME, 2);
             String two = assignment(r, n[0]) + "\n" + assignment(r, n[1]);
             return Task.edit("copy the first two lines to the end",
-                "`2yy` copies two lines, `G` goes to the end, `p` puts them below",
+                "A number before `yy` copies that many lines. `G` goes to the end and `p` puts "
+                    + "them "
+                    + "below",
                 "|" + two + "\n---", two + "\n---\n" + two, "2yyGp");
         },
         r -> {
             String[] adj = several(r, ADJ, 2);
             String verb = pick(r, VERB);
             return Task.edit("delete the two words before `" + verb + "`",
-                "`d2b` deletes two words backward",
+                "`b` moves back a word, and with a number that many words. After `d` it deletes "
+                    + "back "
+                    + "over them",
                 "the " + adj[0] + " " + adj[1] + " " + pick(r, NOUN) + " |" + verb,
                 "the " + adj[0] + " " + verb, "d2b");
         });
@@ -673,7 +762,9 @@ final class Lessons {
             String[] adj = several(r, ADJ, 2);
             String noun = " " + pick(r, NOUN);
             return Task.edit("make the word `" + adj[1] + "`",
-                "`ciw` changes the whole word the cursor is in: type `" + adj[1] + "`, `esc`",
+                "`iw` is the whole word the cursor is in, wherever in it the cursor sits, so `c` "
+                    + "with "
+                    + "it replaces the word without moving to its start",
                 at("the " + adj[0] + noun, 4 + 1 + r.nextInt(adj[0].length() - 1)),
                 "the " + adj[1] + noun, "ciw" + adj[1] + "<esc>");
         },
@@ -682,7 +773,8 @@ final class Lessons {
             String before = "the " + pick(r, EXTRA) + " ";
             String noun = pick(r, NOUN);
             return Task.edit("delete the word `" + word + "`",
-                "`daw` deletes the word and a space, from anywhere inside it",
+                "`aw` is the word the cursor is in plus a space, so `d` with it removes the word "
+                    + "without leaving two spaces behind",
                 at(before + word + " " + noun, before.length() + 1 + r.nextInt(word.length() - 1)),
                 before + noun, "daw");
         },
@@ -691,7 +783,9 @@ final class Lessons {
             String[] words = several(r, ITEM, 3);
             String old = words[0] + " " + words[1];
             return Task.edit("make the quoted text `" + words[2] + "`",
-                "`ci\"` changes what is inside the quotes: type `" + words[2] + "`, `esc`",
+                "`i\"` is everything between the quotes around the cursor, so `c` with it "
+                    + "replaces the "
+                    + "text and keeps the quote marks",
                 at(func + "(\"" + old + "\")", func.length() + 2 + 1 + r.nextInt(old.length() - 1)),
                 func + "(\"" + words[2] + "\")", "ci\"" + words[2] + "<esc>");
         },
@@ -699,20 +793,25 @@ final class Lessons {
             String name = pick(r, NAME);
             String[] words = several(r, ITEM, 2);
             return Task.edit("empty the quotes",
-                "`di\"` deletes everything inside the quotes",
+                "`i\"` is what lies between the quotes, so `d` with it empties them and keeps the "
+                    + "quote "
+                    + "marks",
                 name + " = \"|" + words[0] + " " + words[1] + "\";", name + " = \"\";", "di\"");
         },
         r -> {
             String[] n = several(r, NAME, 3);
             String func = pick(r, FUNC);
             return Task.edit("empty the brackets",
-                "`di(` deletes everything inside the brackets",
+                "`i(` is everything between the round brackets around the cursor, so `d` with it "
+                    + "empties them in one go",
                 func + "(" + n[0] + ", |" + n[1] + ", " + n[2] + ")", func + "()", "di(");
         },
         r -> {
             String flag = pick(r, "ready", "done", "valid", "empty");
             return Task.edit("make the condition `" + flag + "`",
-                "`ci(` replaces what is inside the brackets: type `" + flag + "`, `esc`",
+                "`i(` is everything between the brackets around the cursor, so `c` with it "
+                    + "replaces "
+                    + "the whole condition at once",
                 "if (" + pick(r, NAME) + " |" + pick(r, ">", "<", "==") + " "
                         + (2 + r.nextInt(98)) + ") {",
                 "if (" + flag + ") {", "ci(" + flag + "<esc>");
@@ -722,7 +821,9 @@ final class Lessons {
             String[] f = several(r, FUNC, 2);
             String args = n[0] + ", " + n[1];
             return Task.edit("give `" + f[1] + "()` the same arguments",
-                "`yi(` copies inside the brackets, `j` lands on the `)` below, `P` puts it before",
+                "`y` with `i(` copies what's inside the brackets. Moving down lands the cursor on "
+                    + "the "
+                    + "empty brackets' `)`, and `P` puts the copy before it",
                 f[0] + "(|" + args + ")\n" + f[1] + "()", f[0] + "(" + args + ")\n" + f[1] + "("
                     + args + ")", "yi(jP");
         },
@@ -730,7 +831,8 @@ final class Lessons {
             String name = pick(r, NAME);
             String[] words = several(r, ITEM, 2);
             return Task.edit("make the quoted text `" + words[1] + "`",
-                "`ci\"` works from before the quotes too: type `" + words[1] + "`, `esc`",
+                "`i\"` also works with the cursor before the quotes on the line: it takes the next "
+                    + "pair, so `c` with it replaces their contents from here",
                 "|" + name + " = \"old " + words[0] + "\";", name + " = \"" + words[1] + "\";",
                 "ci\"" + words[1] + "<esc>");
         });
@@ -742,7 +844,8 @@ final class Lessons {
             String rest = pick(r, "now", "again", "twice", "softly");
             String item = pick(r, ITEM);
             return Task.edit("remove the quoted word",
-                "`da\"` deletes the quotes, what is inside, and the space after",
+                "`a\"` is the quoted text with its quote marks and the space after, so `d` with it "
+                    + "removes the whole thing cleanly",
                 at(verb + " \"" + item + "\" " + rest,
                     verb.length() + 2 + r.nextInt(item.length())),
                 verb + " " + rest, "da\"");
@@ -751,14 +854,15 @@ final class Lessons {
             String[] n = several(r, NAME, 3);
             String func = pick(r, FUNC);
             return Task.edit("delete the brackets and their contents",
-                "`da(` takes the brackets as well as what is inside them",
+                "`a(` is the brackets themselves and everything in them, where `i(` is only the "
+                    + "inside",
                 func + "(" + n[0] + ", |" + n[1] + ") + " + n[2], func + " + " + n[2], "da(");
         },
         r -> {
             String list = pick(r, "items", "rows", "cells", "keys");
             int to = r.nextInt(10);
             return Task.edit("make the index `" + to + "`",
-                "`ci[` changes inside the square brackets: type `" + to + "`, `esc`",
+                "`i[` is everything between square brackets, so `c` with it replaces the index",
                 list + "[|" + pick(r, NAME) + " + 1]", list + "[" + to + "]",
                 "ci[" + to + "<esc>");
         },
@@ -766,20 +870,22 @@ final class Lessons {
             String name = pick(r, NAME);
             String list = pick(r, "items", "rows", "cells", "keys");
             return Task.edit("remove the `[i]`",
-                "`da[` deletes the square brackets and what is in them",
+                "`a[` is the square brackets and what's in them, so `d` with it removes the lot",
                 name + " = " + list + "[|i];", name + " = " + list + ";", "da[");
         },
         r -> {
             String name = pick(r, NAME);
             String func = pick(r, FUNC);
             return Task.edit("empty the braces",
-                "`di{` deletes everything inside the curly braces",
+                "`i{` is everything between curly braces, so `d` with it empties them",
                 "if (" + name + ") { |" + func + "(); }", "if (" + name + ") {}", "di{");
         },
         r -> {
             String[] f = several(r, FUNC, 2);
             return Task.edit("make the body `return 1;`",
-                "`ci{` changes inside the braces: type ` return 1; `, then `esc`",
+                "`i{` is everything inside the braces, spaces included, so with `c` you type the "
+                    + "body "
+                    + "again with its spaces",
                 f[0] + "() { |" + f[1] + "(); }", f[0] + "() { return 1; }",
                 "ci{ return 1; <esc>");
         },
@@ -789,7 +895,8 @@ final class Lessons {
             String rest = pick(r, "now", "later", "first");
             int inside = 1 + r.nextInt(p[0].length() - 1);
             return Task.edit("replace `" + p[0] + "` with `" + p[1] + "`",
-                "`ciW` changes the whole WORD, slashes and dots included",
+                "`iW` is a whole WORD: everything between spaces, slashes and dots included, where "
+                    + "`iw` stops at them. `c` with it replaces the path",
                 at(verb + " " + p[0] + " " + rest, verb.length() + 1 + inside),
                 verb + " " + p[1] + " " + rest, "ciW" + p[1] + "<esc>");
         },
@@ -797,7 +904,7 @@ final class Lessons {
             String name = pick(r, NAME);
             String[] it = several(r, ITEM, 2);
             return Task.edit("make the quoted text `" + it[1] + "`",
-                "`ci'` changes inside single quotes: type `" + it[1] + "`, `esc`",
+                "`i'` is everything between single quotes, so `c` with it replaces the text",
                 name + " = '|" + it[0] + "';", name + " = '" + it[1] + "';",
                 "ci'" + it[1] + "<esc>");
         });
@@ -807,7 +914,8 @@ final class Lessons {
             int n = 3 + r.nextInt(2);
             String last = pick(r, "yes", "go", "done", "stop");
             return Task.edit("delete every word but `" + last + "`",
-                "`dw` deletes one, then `.` repeats it for each of the rest",
+                "`.` repeats your last change. Delete one word the usual way, and each `.` deletes "
+                    + "another the same way",
                 "|" + (pick(r, "no", "um", "so", "ha") + " ").repeat(n) + last, last,
                 "dw" + ".".repeat(n - 1));
         },
@@ -815,14 +923,16 @@ final class Lessons {
             String[] n = several(r, NAME, 3);
             String[] lines = {assignment(r, n[0]), assignment(r, n[1]), assignment(r, n[2])};
             return Task.edit("end every line with `;`",
-                "`A;` and `esc` on one line, then `j.` for each of the rest",
+                "Make the change once; `.` repeats it, typing included, so move down with `j` and "
+                    + "repeat it on each line",
                 "|" + String.join("\n", lines), String.join(";\n", lines) + ";", "A;<esc>j.j.");
         },
         r -> {
             String[] keep = several(r, ITEM, 3);
             String drop = pick(r, "drop", "junk", "skip");
             return Task.edit("delete every `" + drop + "` line",
-                "`dd` deletes one, `j` moves to the next, `.` deletes it too",
+                "Delete one line; once the cursor is on the next one to go, `.` repeats the delete "
+                    + "there",
                 keep[0] + "\n|" + drop + "\n" + keep[1] + "\n" + drop + "\n" + keep[2],
                 String.join("\n", keep), "ddj.");
         },
@@ -830,7 +940,9 @@ final class Lessons {
             String[] items = several(r, ITEM, 3);
             String bullet = pick(r, "-", "*", ">");
             return Task.edit("start every line with `" + bullet + " `",
-                "`I" + bullet + " ` and `esc` on the first line, then `j.` for each of the rest",
+                "Add the bullet once with `I`. `.` repeats the whole insertion, so on each other "
+                    + "line "
+                    + "it's one key",
                 "|" + String.join("\n", items),
                 bullet + " " + String.join("\n" + bullet + " ", items),
                 "I" + bullet + " <esc>j.j.");
@@ -839,7 +951,9 @@ final class Lessons {
             String[] words = several(r, new String[] {"wow", "nice", "great", "fine", "yes",
                 "cool"}, 3);
             return Task.edit("remove both `!`",
-                "`f!` and `x` remove the first, `;` finds the next, `.` deletes it",
+                "Find and delete the first `!`. Then `;` repeats the find and `.` repeats the "
+                    + "delete, "
+                    + "so the second costs two keys",
                 "|" + words[0] + "! " + words[1] + "! " + words[2],
                 words[0] + " " + words[1] + " " + words[2], "f!x;.");
         },
@@ -847,21 +961,27 @@ final class Lessons {
             String[] letters = several(r, "a b c d e g h k m n p s".split(" "), 4);
             String gap = pick(r, "-", "_", "+");
             return Task.edit("turn each `" + gap + "` into a space",
-                "`f" + gap + "` and `r ` fix one; `;` finds the next and `.` repeats the change",
+                "Fix one gap with `f` and `r`. After that `;` finds the next gap and `.` repeats "
+                    + "the "
+                    + "replacement",
                 "|" + String.join(gap, letters), String.join(" ", letters),
                 "f" + gap + "r ;.;.");
         },
         r -> {
             String[] n = several(r, NAME, 2);
             return Task.edit("rename both `" + n[0] + "` to `" + n[1] + "`",
-                "`cw" + n[1] + "` and `esc` on the first, then `j`, `b` and `.` on the second",
+                "Rename the first with `c` and `w`. `.` repeats that rename, so get onto the "
+                    + "second "
+                    + "name's first letter and press it",
                 "|" + n[0] + " = 1\n" + n[0] + " = 2", n[1] + " = 1\n" + n[1] + " = 2",
                 "cw" + n[1] + "<esc>jb.");
         },
         r -> {
             String[] n = several(r, NAME, 3);
             return Task.edit("rename every `" + n[0] + "` to `" + n[1] + "`",
-                "`cw" + n[1] + "` and `esc`, then `ww.` and `$b.` for the others",
+                "Change one with `c` and `w`, then go to the first letter of each of the others "
+                    + "and "
+                    + "repeat it with `.`",
                 "|" + n[0] + "(" + n[0] + ", " + n[2] + ", " + n[0] + ")",
                 n[1] + "(" + n[1] + ", " + n[2] + ", " + n[1] + ")",
                 "cw" + n[1] + "<esc>ww.$b.");
@@ -871,21 +991,26 @@ final class Lessons {
         r -> {
             String[] keep = several(r, ITEM, 2);
             return Task.edit("delete both drop lines",
-                "`V` selects the line, `j` adds the next, `d` deletes both",
+                "`V` selects whole lines; moving down with `j` adds the next line to the "
+                    + "selection, "
+                    + "and `d` deletes whatever is selected",
                 keep[0] + "\n|drop\ndrop too\n" + keep[1], keep[0] + "\n" + keep[1], "Vjd");
         },
         r -> {
             String[] keep = several(r, ITEM, 2);
             return Task.edit("delete both drop lines",
-                "`V` selects the line, `k` adds the one above, `d` deletes both",
+                "`V` selects whole lines, and moving up with `k` adds the line above; `d` then "
+                    + "deletes "
+                    + "both",
                 keep[0] + "\ndrop\n|drop too\n" + keep[1], keep[0] + "\n" + keep[1], "Vkd");
         },
         r -> {
             String[] adj = several(r, ADJ, 2);
             String noun = pick(r, NOUN);
             return Task.edit("change `" + adj[0] + "` to `" + adj[1] + "`",
-                "`ve` selects to the end of the word, `c` replaces it: type `" + adj[1]
-                    + "`, `esc`",
+                "`v` starts selecting at the cursor, a motion like `e` stretches the selection, "
+                    + "and "
+                    + "`c` replaces what is selected",
                 "the |" + adj[0] + " " + noun, "the " + adj[1] + " " + noun,
                 "vec" + adj[1] + "<esc>");
         },
@@ -893,7 +1018,9 @@ final class Lessons {
             String[] n = several(r, NAME, 4);
             String func = pick(r, "max", "min", "abs", "sum");
             return Task.edit("make the argument `" + n[3] + "`",
-                "`vt)` selects up to the bracket, `c` replaces it: type `" + n[3] + "`, `esc`",
+                "`v` starts selecting, `t)` stretches the selection to just before the bracket, "
+                    + "and `c` "
+                    + "replaces it",
                 func + "(|" + n[0] + " + " + n[1] + " * " + n[2] + ")", func + "(" + n[3] + ")",
                 "vt)c" + n[3] + "<esc>");
         },
@@ -901,7 +1028,9 @@ final class Lessons {
             String word = pick(r, ADJ);
             String noun = pick(r, NOUN);
             return Task.edit("delete the word `" + word + "`",
-                "`vaw` selects the word and its space, `d` deletes them",
+                "In visual mode a text object selects itself: `aw` selects the word with its "
+                    + "space, "
+                    + "ready for `d`",
                 at("the " + word + " " + noun, 4 + 1 + r.nextInt(word.length() - 1)),
                 "the " + noun, "vawd");
         },
@@ -909,13 +1038,15 @@ final class Lessons {
             String[] items = several(r, ITEM, 2);
             String two = items[0] + "\n" + items[1];
             return Task.edit("copy the first two lines to the end",
-                "`Vj` selects them, `y` copies, `G` goes to the end, `p` puts them below",
+                "Select both lines with `V`, copy them with `y`, then go to the end and `p` puts "
+                    + "them "
+                    + "below",
                 "|" + two + "\n---", two + "\n---\n" + two, "VjyGp");
         },
         r -> {
             String fresh = pick(r, ITEM);
             return Task.edit("replace both old lines with `" + fresh + "`",
-                "`Vj` selects both lines, `c` replaces them: type `" + fresh + "`, `esc`",
+                "Select both lines with `V`; `c` replaces everything selected with what you type",
                 "start\n|old line 1\nold line 2\nend", "start\n" + fresh + "\nend",
                 "Vjc" + fresh + "<esc>");
         },
@@ -923,7 +1054,8 @@ final class Lessons {
             String title = pick(r, NAME) + " list";
             String[] items = several(r, ITEM, 2 + r.nextInt(3));
             return Task.edit("delete everything below the title",
-                "`VG` selects to the end of the text, `d` deletes it",
+                "`V` selects whole lines and `G` stretches the selection to the last line, so `d` "
+                    + "deletes everything from here down",
                 title + "\n|" + String.join("\n", items), title, "VGd");
         });
 
@@ -931,23 +1063,29 @@ final class Lessons {
 
     /** The walk-through: fixed targets on one text, each search teaching something new. */
     private static final List<Task> SEARCH_GUIDED = List.of(
-        Task.motion(REACH, "search for `sort`: type `/sort`, then `enter`",
+        Task.motion(REACH, "`/` starts a search: type what you're looking for and press "
+                + "`enter`, and the cursor jumps to where it next appears. The target is `sort`",
             PIPELINE, 0, 0, 4, 7, 6, "/sort<enter>"),
-        Task.motion(REACH, "a few letters are enough: `/no` and `enter` finds `notify`",
+        Task.motion(REACH, "A search doesn't need the whole word, just enough letters that "
+                + "nothing before the target matches. The target is `notify`",
             PIPELINE, 4, 7, 8, 8, 4, "/no<enter>"),
-        Task.motion(REACH, "the search goes past the end and on from the top: `/load`, `enter`,"
-                + " then `n` for the next match",
+        Task.motion(REACH, "A search looks forward from the cursor and carries on from the top "
+                + "at the end. If it stops at the wrong match, `n` goes on to the next one",
             PIPELINE, 8, 8, 1, 8, 7, "/load<enter>n"),
-        Task.motion(REACH, "`N` goes back to the previous match",
+        Task.motion(REACH, "`N` goes back to the previous match of your last search, the "
+                + "opposite of `n`",
             PIPELINE, 1, 8, 0, 8, 1, "N"),
-        Task.motion(REACH, "`/golf` finds it on line 7 first; `n` goes on to the one in the"
-                + " brackets",
+        Task.motion(REACH, "`golf` appears twice. A search stops at the first match after the "
+                + "cursor, and `n` moves on to the next",
             PIPELINE, 0, 8, 7, 25, 7, "/golf<enter>n"),
-        Task.motion(REACH, "`/me` and `enter` finds `merge`",
+        Task.motion(REACH, "Search for `merge` with as few letters as make it the first match "
+                + "ahead of the cursor",
             PIPELINE, 7, 25, 2, 10, 4, "/me<enter>"),
-        Task.motion(REACH, "`/cl` and `enter` finds `close`",
+        Task.motion(REACH, "Search for `close`: which of its first letters appear nowhere else "
+                + "on the way?",
             PIPELINE, 2, 10, 9, 9, 4, "/cl<enter>"),
-        Task.motion(REACH, "from the bottom, `/al` and `enter` goes round to `alpha` at the top",
+        Task.motion(REACH, "From the last line, a search wraps round to the top. The target is "
+                + "`alpha`",
             PIPELINE, 9, 9, 0, 0, 4, "/al<enter>"));
 
     /**
@@ -978,9 +1116,8 @@ final class Lessons {
             }
             String keys = shortestSearch(lines, row, col, goal[0], goal[1]);
             String word = lines[goal[0]].substring(goal[1]).split("[^A-Za-z0-9_]")[0];
-            String[] parts = keys.split("<enter>", -1);
-            String hint = "search for `" + word + "`: `" + parts[0] + "`, then `enter`"
-                    + (parts[1].isEmpty() ? "" : ", then `" + parts[1] + "`");
+            String hint = "Search for `" + word + "` with `/` and a few of its letters; `n` and "
+                    + "`N` step between matches if the first isn't it";
             tasks.add(Task.motion(REACH, hint, text, row, col, goal[0], goal[1],
                     Keys.parse(keys).length(), keys));
             row = goal[0];
@@ -1398,7 +1535,7 @@ final class Lessons {
                 }
                 int[] goal = candidates.get(random.nextInt(candidates.size()));
                 Path path = best[goal[0]][goal[1]];
-                tasks.add(Task.motion(REACH, "reach the highlight with `" + path.keys + "`", text,
+                tasks.add(Task.motion(REACH, explain(path, row, col), text,
                         row, col, goal[0], goal[1], path.cost, path.keys));
                 used.add(goal[0] * 1000 + goal[1]);
                 row = goal[0];
@@ -1409,7 +1546,62 @@ final class Lessons {
         };
     }
 
-    private record Path(int cost, String keys, int row, int col, int want) {
+    /** A way to a position: its keys, the same keys split into moves, and where it ends. */
+    private record Path(int cost, String keys, String steps, int row, int col, int want) {
+    }
+
+    /** What each move does, for hints that explain rather than give the answer away. */
+    private static final java.util.Map<String, String> MOVES = java.util.Map.ofEntries(
+        java.util.Map.entry("h", "`h` steps one character left"),
+        java.util.Map.entry("l", "`l` steps one character right"),
+        java.util.Map.entry("j", "`j` goes down a line"),
+        java.util.Map.entry("k", "`k` goes up a line"),
+        java.util.Map.entry("w", "`w` jumps to the start of the next word"),
+        java.util.Map.entry("b", "`b` jumps back to the start of a word"),
+        java.util.Map.entry("e", "`e` jumps to the end of a word"),
+        java.util.Map.entry("0", "`0` goes to the very first column"),
+        java.util.Map.entry("^", "`^` goes to the first character that isn't a space"),
+        java.util.Map.entry("$", "`$` goes to the end of the line"),
+        java.util.Map.entry("gg", "`gg` goes to the first line"),
+        java.util.Map.entry("G", "`G` goes to the last line"),
+        java.util.Map.entry("W", "`W` jumps to the next WORD, punctuation and all"),
+        java.util.Map.entry("B", "`B` jumps back a WORD"),
+        java.util.Map.entry("E", "`E` jumps to the end of a WORD"),
+        java.util.Map.entry("%", "`%` jumps from a bracket to the one that matches it"),
+        java.util.Map.entry(";", "`;` repeats your last `f` or `t`"),
+        java.util.Map.entry(",", "`,` repeats it in the other direction"),
+        java.util.Map.entry("f", "`f` and a character jump onto the next copy of it on the line"),
+        java.util.Map.entry("t", "`t` and a character stop just before it"),
+        java.util.Map.entry("F", "`F` is `f` going left"),
+        java.util.Map.entry("T", "`T` is `t` going left"),
+        java.util.Map.entry("count", "a number in front of a move repeats it that many times"),
+        java.util.Map.entry("line", "a number and `G` jump straight to that line; the line "
+                + "numbers are down the left"));
+
+    /**
+     * A guided hint for a movement target: where it is from the cursor, and what the moves
+     * that get there do. Not which ones in what order, or how many: that's for you to work out.
+     */
+    private static String explain(Path path, int row, int col) {
+        int down = path.row - row;
+        String where = down == 0 ? "on this line, to the " + (path.col > col ? "right" : "left")
+                : Math.abs(down) + (Math.abs(down) == 1 ? " line " : " lines ")
+                        + (down > 0 ? "down" : "up");
+        java.util.Set<String> said = new java.util.LinkedHashSet<>();
+        for (String step : path.steps.split(" ")) {
+            String kind = step.matches("\\d+G") ? "line" : step.matches("\\d+.+") ? "count"
+                    : step.length() == 2 && "fFtT".indexOf(step.charAt(0)) >= 0
+                            ? step.substring(0, 1) : step;
+            if (MOVES.containsKey(kind)) {
+                said.add(MOVES.get(kind));
+            }
+            // A counted move needs the move itself explained too.
+            String move = step.replaceFirst("^\\d+", "");
+            if (kind.equals("count") && MOVES.containsKey(move)) {
+                said.add(MOVES.get(move));
+            }
+        }
+        return "The highlight is " + where + ". Useful here: " + String.join("; ", said);
     }
 
     /** Cheapest key sequence from the start to every position reachable within the limit. */
@@ -1423,7 +1615,7 @@ final class Lessons {
         // Where j and k land depends on the remembered column, so it is part of the state.
         Set<Long> seen = new HashSet<>();
         PriorityQueue<Path> queue = new PriorityQueue<>((a, b) -> Integer.compare(a.cost, b.cost));
-        queue.add(new Path(0, "", row, col, want));
+        queue.add(new Path(0, "", "", row, col, want));
         while (!queue.isEmpty()) {
             Path at = queue.poll();
             long state = ((long) at.row << 44) | ((long) at.col << 24) | Math.min(at.want, 0xFFFFFF);
@@ -1443,7 +1635,9 @@ final class Lessons {
                     vim.key(k);
                 }
                 if (vim.row() != at.row || vim.col() != at.col || vim.want() != at.want) {
-                    queue.add(new Path(cost, at.keys + move, vim.row(), vim.col(), vim.want()));
+                    queue.add(new Path(cost, at.keys + move,
+                            at.steps.isEmpty() ? move : at.steps + " " + move, vim.row(),
+                            vim.col(), vim.want()));
                 }
             }
         }

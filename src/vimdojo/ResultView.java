@@ -47,7 +47,7 @@ final class ResultView extends JComponent {
             @Override
             public void keyPressed(KeyEvent e) {
                 switch (e.getKeyCode()) {
-                    case KeyEvent.VK_ENTER -> app.startLesson(app.lessonIndex() + 1);
+                    case KeyEvent.VK_ENTER -> app.continueFromResults();
                     case KeyEvent.VK_TAB -> app.startLesson(app.lessonIndex());
                     case KeyEvent.VK_DOWN -> pick(picked + 1);
                     case KeyEvent.VK_UP -> pick(picked - 1);
@@ -180,8 +180,10 @@ final class ResultView extends JComponent {
         g.setFont(Theme.ui(15f));
         g.setColor(t.sub());
         String best;
-        if (previousEfficiency.isEmpty()) {
-            best = "First run of this lesson.";
+        if (run.guided()) {
+            best = "Guided run: hints don't count toward bests or unlocking.";
+        } else if (previousEfficiency.isEmpty()) {
+            best = "First practice run of this lesson.";
         } else {
             boolean cleaner = attempt.efficiency() > previousEfficiency.getAsDouble() + 0.05;
             boolean faster = attempt.seconds() < previousSeconds.getAsDouble();
@@ -202,13 +204,15 @@ final class ResultView extends JComponent {
         int next = app.lessonIndex() + 1;
         if (!run.lesson().isMix() && next < Lessons.LESSONS.size()) {
             boolean open = app.unlocked(next);
-            boolean justNow = open && attempt.efficiency() >= App.PASS
+            boolean justNow = open && !run.guided() && attempt.efficiency() >= App.PASS
                     && previousEfficiency.orElse(0) < App.PASS;
             g.setFont(justNow ? Theme.bold(15f) : Theme.ui(15f));
             g.setColor(justNow ? t.good() : t.sub());
             g.drawString(justNow ? "Lesson " + (next + 1) + " unlocked"
-                    : open ? "" : "Lesson " + (next + 1) + " requires " + Math.round(App.PASS)
-                    + "% or more", left, recapY + 66);
+                    : open ? "" : run.guided() ? "Practice next: " + Math.round(App.PASS)
+                    + "% or more unlocks lesson " + (next + 1)
+                    : "Lesson " + (next + 1) + " requires " + Math.round(App.PASS)
+                    + "% or more in practice", left, recapY + 66);
         }
 
         // What par looked like for each task, so a wasteful answer can be compared with it.
