@@ -1,6 +1,6 @@
 # vimdojo
 
-A local trainer for Vim keybindings. Sixteen short lessons each introduce a few keys, drill them in a small built-in Vim, and score you on keystrokes and time. Everything runs and is stored on your own machine.
+A local trainer for Vim keybindings. Sixteen short lessons each introduce a few keys, drill them in a small built-in Vim, and score you on keystrokes and time; a seventeenth mixes everything together with no hints. Tasks are filled with different words and positions on every run. Everything runs and is stored on your own machine.
 
 ## Requirements
 
@@ -56,7 +56,7 @@ the `.exe` does not work on its own. Move the folder wherever you like and make 
 `.exe`.
 
 Build the app on the machine that will use it. An app built on one Mac and downloaded onto
-another is blocked by macOS because it is not notarised, and a build only matches the chip
+another is blocked by macOS because it is not notarized, and a build only matches the chip
 (Apple Silicon or Intel) it was made on.
 
 The Windows scripts have not yet been tried on a Windows machine. If one fails, the two commands
@@ -64,10 +64,51 @@ inside `run.bat` can be typed by hand.
 
 ## Using it
 
+- Each lesson opens on an introduction card that lists its keys and plays a demonstration:
+  the lesson's own tasks solved one key at a time, with each key shown as it is pressed.
 - **Enter** starts a lesson from its introduction card; **Tab** restarts it.
-- After the last task you see your efficiency (keystrokes against par), time, and a per-task chart.
-- **lessons** (top right) lists all 16 with your best for each: `j`/`k` to move, Enter to start.
-- **stats** shows totals, a best per lesson, and every past run.
+- After the last task you see your efficiency (keystrokes against par), time, a per-task chart,
+  and the par solution for every task. Click a task there (or pick it with `j`/`k` and press
+  `r`) to watch par's keys replayed on its text, next to the keys you pressed.
+- The bar along the bottom shows Vim's current mode, the keys that work on this screen, and
+  links to the other screens.
+
+Everything can be reached from the keyboard, the Vim way:
+
+| Keys | What they do |
+| --- | --- |
+| `:docs` | the reference, over the current screen: every key, command, alias and mouse action, with a playable example for each Vim key |
+| `:lessons` `:stats` `:settings` | open that screen |
+| `:lesson` `:ready` | back to the lesson in progress |
+| `:next` `:prev` `:7` | another lesson, by direction or number |
+| `:restart` | start the lesson again |
+| `:colo paper` | switch theme (ink, paper, moss, indigo) |
+| `:dvorak` `:qwerty` | switch keyboard layout |
+| `:q` | quit |
+| `gt` `gT` | next or previous screen |
+| `j` `k` `gg` `G` | move within a list |
+| `h` `l` | previous or next lesson, from a lesson's introduction card |
+
+The docs read like a manual page: `/text` searches them, `n` and `N` move between matches, and
+`q`, `esc` or `:q` closes them without quitting the app.
+
+The settings screen lists these too, and holds the theme, the keyboard layout and an option to
+erase progress.
+
+The stats screen includes an activity calendar: a year of days shaded by how many lessons you
+finished on each, with your current and longest streak of consecutive days.
+
+### Keyboard layout
+
+Set **Keyboard layout** to dvorak in settings, or type `:dvorak` (or Vim's own `:set keymap=dvorak`), if
+you use Vim's Dvorak keymap on a keyboard your system treats as QWERTY. It works the way that
+Vim option does: text you insert, search patterns and the character given to `f`, `t` and `r`
+come out in Dvorak, while normal-mode commands such as `h j k l` and `dw` stay on their usual
+keys. `:qwerty` or `:set keymap=` switches back.
+
+The setting assumes your system is set to QWERTY. Leave it on qwerty if your whole system is
+set to Dvorak: the keys already arrive as Dvorak, and
+vimdojo needs no setting.
 
 The built-in Vim follows Neovim's defaults and covers only the keys the lessons teach: there are
 no `:` commands, macros, or marks, and `/` searches for literal text.

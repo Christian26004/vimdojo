@@ -1,37 +1,107 @@
 package vimdojo;
 
+import java.awt.BasicStroke;
+import java.awt.Cursor;
+import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.geom.Arc2D;
 import java.util.Locale;
 import java.util.OptionalDouble;
 import javax.swing.JComponent;
 
-/** Summary of the lesson just finished: headline numbers, a per-task chart and the breakdown. */
+/** Summary of the lesson just finished: an efficiency ring, the numbers and a per-task chart. */
 final class ResultView extends JComponent {
+    private static final int SOLUTION_ROW = 30;
+
     private final App app;
     private Run run;
     private Attempt attempt;
     private OptionalDouble previousEfficiency = OptionalDouble.empty();
     private OptionalDouble previousSeconds = OptionalDouble.empty();
+    private int scroll;
+    private int overflow;
+    // The task row picked for replaying, and where each row was last drawn, for the mouse.
+    private int picked;
+    private final List<Rectangle> rowAreas = new ArrayList<>();
 
     ResultView(App app) {
         this.app = app;
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
+        // Only needed when the window is too short to show the whole summary.
+        addMouseWheelListener(e -> {
+            scroll = Math.max(0, Math.min(overflow,
+                    scroll + (int) Math.round(e.getPreciseWheelRotation() * 30)));
+            repaint();
+        });
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_ENTER -> app.startLesson(app.lessonIndex() + 1);
                     case KeyEvent.VK_TAB -> app.startLesson(app.lessonIndex());
+                    case KeyEvent.VK_DOWN -> pick(picked + 1);
+                    case KeyEvent.VK_UP -> pick(picked - 1);
+                    default -> {
+                    }
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent e) {
+                switch (e.getKeyChar()) {
+                    case 'j' -> pick(picked + 1);
+                    case 'k' -> pick(picked - 1);
+                    case 'r', ' ' -> app.replay(picked);
                     default -> {
                     }
                 }
             }
         });
+        MouseAdapter mouse = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                requestFocusInWindow();
+                int row = rowAt(e);
+                if (row >= 0) {
+                    pick(row);
+                    app.replay(row);
+                }
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                setCursor(Cursor.getPredefinedCursor(rowAt(e) >= 0 ? Cursor.HAND_CURSOR
+                        : Cursor.DEFAULT_CURSOR));
+            }
+        };
+        addMouseListener(mouse);
+        addMouseMotionListener(mouse);
+    }
+
+    private int rowAt(MouseEvent e) {
+        for (int i = 0; i < rowAreas.size(); i++) {
+            if (rowAreas.get(i).contains(e.getPoint())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void pick(int row) {
+        if (run != null) {
+            picked = Math.max(0, Math.min(row, run.tasks().size() - 1));
+            repaint();
+        }
     }
 
     void show(Run run, Attempt attempt, OptionalDouble previousEfficiency,
@@ -40,6 +110,8 @@ final class ResultView extends JComponent {
         this.attempt = attempt;
         this.previousEfficiency = previousEfficiency;
         this.previousSeconds = previousSeconds;
+        scroll = 0;
+        picked = 0;
         repaint();
     }
 
@@ -50,141 +122,199 @@ final class ResultView extends JComponent {
         }
         Graphics2D g = Theme.prep(g0);
         Theme t = Theme.current();
-        int width = Math.min(getWidth() - 80, 1000);
+        int width = Math.min(getWidth() - 80, 920);
         int left = (getWidth() - width) / 2;
-        int top = Math.max(20, (getHeight() - 470) / 2);
+        // The par solutions go in two columns when there is room for them side by side.
+        int tasks = run.tasks().size();
+        int columns = width >= 820 ? 2 : 1;
+        int solutionRows = (tasks + columns - 1) / columns;
+        int total = 392 + solutionRows * SOLUTION_ROW + 6;
+        overflow = Math.max(0, total + 16 - getHeight());
+        scroll = Math.min(scroll, overflow);
+        int top = overflow > 0 ? 8 - scroll : (getHeight() - total) / 2;
 
-        headline(g, "efficiency", Math.round(attempt.efficiency()) + "%", left, top);
-        headline(g, "time", seconds(attempt.seconds()), left, top + 110);
-        paintChart(g, left + 240, top, width - 240, 220);
+        Paint.label(g, "lesson " + (app.lessonIndex() + 1) + " complete", left, top + 12);
+        g.setFont(Theme.bold(30f));
+        g.setColor(t.text());
+        g.drawString(run.lesson().title(), left - 1, top + 50);
 
-        String[][] stats = {
-            {"lesson", run.lesson().title()},
-            {"keystrokes", attempt.keys() + "/" + attempt.par()},
-            {"tasks", Integer.toString(attempt.tasks())},
-            {"keys per minute", attempt.seconds() == 0 ? "-"
-                    : Long.toString(Math.round(attempt.keys() * 60 / attempt.seconds()))},
-        };
-        int[] columns = {0, 36, 58, 74};
-        for (int i = 0; i < stats.length; i++) {
-            int x = left + width * columns[i] / 100;
-            g.setFont(Theme.font(14f));
-            g.setColor(t.sub());
-            g.drawString(stats[i][0], x, top + 280);
-            g.setFont(Theme.font(i == 0 ? 16f : 22f));
-            g.setColor(t.main());
-            g.drawString(stats[i][1], x, top + 312);
-        }
-        g.setFont(Theme.font(11f));
+        // Efficiency as a ring that fills clockwise from the top.
+        int ring = 150;
+        int ringTop = top + 84;
+        g.setStroke(new BasicStroke(12f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(t.panel());
+        g.drawOval(left + 6, ringTop + 6, ring - 12, ring - 12);
+        // The ring is full at 100%; beyond that it turns green and the number carries the rest.
+        g.setColor(attempt.efficiency() > 100 ? t.good() : t.accent());
+        g.draw(new Arc2D.Double(left + 6, ringTop + 6, ring - 12, ring - 12, 90,
+                -360 * Math.min(100, attempt.efficiency()) / 100, Arc2D.OPEN));
+        g.setFont(Theme.bold(36f));
+        g.setColor(t.text());
+        String percent = Math.round(attempt.efficiency()) + "%";
+        g.drawString(percent, left + (ring - g.getFontMetrics().stringWidth(percent)) / 2,
+                ringTop + ring / 2 + 8);
+        g.setFont(Theme.caps(9.5f));
         g.setColor(t.sub());
-        g.drawString("yours/par", left + width * columns[1] / 100, top + 332);
+        String caption = "EFFICIENCY";
+        g.drawString(caption, left + (ring - g.getFontMetrics().stringWidth(caption)) / 2 + 1,
+                ringTop + ring / 2 + 28);
 
-        // What this lesson taught, as a recap.
-        StringBuilder learned = new StringBuilder("practised   ");
-        for (Lesson.Key key : run.lesson().keys()) {
-            learned.append('`').append(key.key()).append("`   ");
+        int column = left + ring + 44;
+        figure(g, "time", seconds(attempt.seconds()), "", column, ringTop + 6);
+        figure(g, "keystrokes", Integer.toString(attempt.keys()), "par " + attempt.par()
+                + (attempt.keys() < attempt.par() ? ", " + (attempt.par() - attempt.keys())
+                + " under" : ""), column, ringTop + 84);
+
+        paintChart(g, left + 400, ringTop - 8, width - 400, 170);
+
+        int recapY = ringTop + ring + 50;
+        if (run.lesson().keys().isEmpty()) {
+            Paint.label(g, "no hints, your own choice of keys", left, recapY);
+        } else {
+            int x = left + Paint.label(g, "practiced", left, recapY) + 16;
+            for (Lesson.Key key : run.lesson().keys()) {
+                x += Paint.keycap(g, key.key(), x, recapY + 1, 13f) + 8;
+            }
         }
-        g.setFont(Theme.font(15f));
-        Paint.rich(g, learned.toString(), left, top + 376, t.sub(), t.main());
 
-        g.setFont(Theme.font(15f));
+        g.setFont(Theme.ui(15f));
         g.setColor(t.sub());
         String best;
         if (previousEfficiency.isEmpty()) {
-            best = "first run of this lesson";
+            best = "First run of this lesson.";
         } else {
             boolean cleaner = attempt.efficiency() > previousEfficiency.getAsDouble() + 0.05;
             boolean faster = attempt.seconds() < previousSeconds.getAsDouble();
             if (cleaner || faster) {
-                g.setColor(t.main());
-                best = cleaner && faster ? "new best efficiency and time"
-                        : cleaner ? "new best efficiency" : "new best time";
+                g.setFont(Theme.bold(15f));
+                g.setColor(t.accent());
+                best = cleaner && faster ? "New best efficiency and time."
+                        : cleaner ? "New best efficiency." : "New best time.";
             } else {
-                best = String.format(Locale.ROOT, "personal best  %d%%  %s",
+                best = String.format(Locale.ROOT, "Your best is %d%% in %s.",
                         Math.round(previousEfficiency.getAsDouble()),
                         seconds(previousSeconds.getAsDouble()));
             }
         }
-        g.drawString(best, left, top + 412);
+        g.drawString(best, left, recapY + 40);
 
-        g.setFont(Theme.font(13f));
+        // What par looked like for each task, so a wasteful answer can be compared with it.
+        int solutionsTop = recapY + 84;
+        int labelEnd = left + Paint.label(g, "par for each task", left, solutionsTop);
+        g.setFont(Theme.ui(12f));
         g.setColor(t.sub());
-        boolean last = app.lessonIndex() == Lessons.ALL.size() - 1;
-        Paint.centered(g, (last ? "" : "enter  -  next lesson      ") + "tab  -  try again",
-                getWidth(), getHeight() - 28);
+        g.drawString("click one to watch it", labelEnd + 14, solutionsTop);
+        rowAreas.clear();
+        for (int i = 0; i < tasks; i++) {
+            int x = left + (i / solutionRows) * (width / 2);
+            int baseline = solutionsTop + 30 + (i % solutionRows) * SOLUTION_ROW;
+            Rectangle area = new Rectangle(x - 8, baseline - 20, width / columns - 8,
+                    SOLUTION_ROW - 2);
+            rowAreas.add(area);
+            if (i == picked) {
+                Paint.panel(g, area.x, area.y, area.width, area.height);
+            }
+            int used = run.keys(i);
+            int par = run.tasks().get(i).par();
+            g.setFont(Theme.mono(12.5f));
+            g.setColor(t.sub());
+            g.drawString(String.format("%2d", i + 1), x, baseline);
+            int after = x + 34 + Paint.sequence(g, run.tasks().get(i).solution(), x + 34, baseline,
+                    12.5f);
+            g.setFont(Theme.ui(13f));
+            g.setColor(used > par ? t.accent() : used < par ? t.good() : t.sub());
+            g.drawString(used == par ? "matched" : used > par ? "you used " + used
+                    : "you used " + used + ", " + (par - used) + " under", after + 8, baseline);
+        }
     }
 
-    private void headline(Graphics2D g, String label, String value, int x, int y) {
+    private void figure(Graphics2D g, String label, String value, String note, int x, int y) {
         Theme t = Theme.current();
-        g.setFont(Theme.font(24f));
+        Paint.label(g, label, x, y + 10);
+        g.setFont(Theme.bold(30f));
+        g.setColor(t.text());
+        g.drawString(value, x - 1, y + 46);
+        int valueWidth = g.getFontMetrics().stringWidth(value);
+        g.setFont(Theme.ui(14f));
         g.setColor(t.sub());
-        g.drawString(label, x, y + 24);
-        g.setFont(Theme.font(56f));
-        g.setColor(t.main());
-        g.drawString(value, x - 3, y + 82);
+        g.drawString(note, x + valueWidth + 10, y + 46);
     }
 
-    /** One bar per task: keystrokes used, with anything over par in the error colour. */
+    /**
+     * One bar per task: keystrokes used, with anything over par in the accent color, and for a
+     * task finished under par, the keys saved in green on top.
+     */
     private void paintChart(Graphics2D g, int x, int y, int w, int h) {
         Theme t = Theme.current();
-        int plotX = x + 34;
-        int plotY = y + 8;
-        int plotW = w - 34;
-        int plotH = h - 8 - 62;
+        Paint.panel(g, x, y, w, h + 62);
+        int plotX = x + 24;
+        int plotW = w - 48;
+        int plotY = y + 44;
+        int plotH = h - 44;
         int n = run.tasks().size();
         int peak = 1;
         for (int i = 0; i < n; i++) {
             peak = Math.max(peak, Math.max(run.keys(i), run.tasks().get(i).par()));
         }
-        int step = Math.max(1, (int) Math.ceil(peak / 4.0));
-        int yMax = step * 4;
 
-        g.setFont(Theme.font(11f));
+        int titleWidth = Paint.label(g, "keys per task", plotX, y + 26);
+        g.setFont(Theme.ui(11.5f));
         FontMetrics fm = g.getFontMetrics();
-        for (int i = 0; i <= 4; i++) {
-            int gy = plotY + plotH - plotH * i / 4;
-            g.setColor(t.subAlt());
-            g.drawLine(plotX, gy, plotX + plotW, gy);
+        Object[][] legend = {{"under par", t.good()}, {"over par", t.accent()},
+                {"within par", t.text()}};
+        int legendWidth = -18;
+        for (Object[] entry : legend) {
+            legendWidth += fm.stringWidth((String) entry[0]) + 16 + 18;
+        }
+        // Beside the title when there is room, otherwise on a line of its own beneath it.
+        boolean below = titleWidth + 24 + legendWidth > plotW;
+        int legendY = below ? y + 46 : y + 26;
+        int legendX = below ? plotX + legendWidth : x + w - 24;
+        if (below) {
+            plotY += 18;
+            plotH -= 18;
+        }
+        for (Object[] entry : legend) {
+            legendX -= fm.stringWidth((String) entry[0]);
             g.setColor(t.sub());
-            String label = Integer.toString(step * i);
-            g.drawString(label, plotX - 8 - fm.stringWidth(label), gy + 4);
+            g.drawString((String) entry[0], legendX, legendY);
+            legendX -= 16;
+            g.setColor((Color) entry[1]);
+            g.fillRoundRect(legendX, legendY - 9, 10, 10, 4, 4);
+            legendX -= 18;
         }
 
         int slot = plotW / n;
-        int bar = Math.min(46, slot * 6 / 10);
+        int bar = Math.min(40, slot * 6 / 10);
         for (int i = 0; i < n; i++) {
             int used = run.keys(i);
             int par = run.tasks().get(i).par();
             int bx = plotX + slot * i + (slot - bar) / 2;
-            int usedH = plotH * used / yMax;
-            int parH = plotH * Math.min(used, par) / yMax;
-            g.setColor(t.error());
-            g.fillRoundRect(bx, plotY + plotH - usedH, bar, usedH, 6, 6);
-            g.setColor(t.main());
-            g.fillRoundRect(bx, plotY + plotH - parH, bar, parH, 6, 6);
-            if (used > par) {
-                // Square off the join between the two colours.
-                g.fillRect(bx, plotY + plotH - parH, bar, Math.min(parH, 6));
+            // The bar reaches the larger of the two; its lower part is always the keys in common.
+            int fullH = Math.max(4, (plotH - 18) * Math.max(used, par) / peak);
+            int baseH = Math.max(4, (plotH - 18) * Math.min(used, par) / peak);
+            if (used != par) {
+                g.setColor(used > par ? t.accent() : t.good());
+                g.fillRoundRect(bx, plotY + plotH - fullH, bar, fullH, 8, 8);
             }
+            g.setColor(t.text());
+            g.fillRoundRect(bx, plotY + plotH - baseH, bar, baseH, 8, 8);
+            if (used != par) {
+                // Square off the join between the two colors.
+                g.fillRect(bx, plotY + plotH - baseH, bar, Math.min(baseH, 8));
+            }
+            g.setFont(Theme.bold(11.5f));
+            g.setColor(used > par ? t.accent() : used < par ? t.good() : t.text());
+            String count = Integer.toString(used);
+            g.drawString(count, bx + (bar - g.getFontMetrics().stringWidth(count)) / 2,
+                    plotY + plotH - fullH - 6);
+            g.setFont(Theme.ui(11.5f));
             g.setColor(t.sub());
-            String number = Integer.toString(i + 1);
-            g.drawString(number, bx + (bar - fm.stringWidth(number)) / 2, plotY + plotH + 16);
             String time = seconds(run.seconds(i));
-            g.drawString(time, bx + (bar - fm.stringWidth(time)) / 2, plotY + plotH + 32);
+            g.drawString(time, bx + (bar - fm.stringWidth(time)) / 2, plotY + plotH + 20);
         }
-
-        int legendY = y + h - 4;
-        int legendX = plotX;
-        g.setColor(t.main());
-        g.fillRect(legendX, legendY - 8, 10, 8);
-        g.drawString("keys within par", legendX + 16, legendY);
-        legendX += 16 + fm.stringWidth("keys within par") + 22;
-        g.setColor(t.error());
-        g.fillRect(legendX, legendY - 8, 10, 8);
-        g.drawString("extra keys", legendX + 16, legendY);
         g.setColor(t.sub());
-        String axis = "task, with time taken";
-        g.drawString(axis, plotX + plotW - fm.stringWidth(axis), legendY);
+        Paint.label(g, "time on each task", plotX, y + h + 44);
     }
 
     static String seconds(double seconds) {

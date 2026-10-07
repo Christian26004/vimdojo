@@ -12,6 +12,8 @@ final class Settings {
     String theme = Theme.ALL[0].name();
     /** Index of the lesson to open next. */
     int lesson;
+    /** Typed text is converted from QWERTY to Dvorak, as Vim's keymap=dvorak does. */
+    boolean dvorak;
 
     private final Path file;
 
@@ -33,6 +35,7 @@ final class Settings {
             try (Reader in = Files.newBufferedReader(s.file)) {
                 p.load(in);
                 s.theme = p.getProperty("theme", s.theme);
+                s.dvorak = Boolean.parseBoolean(p.getProperty("dvorak"));
                 int lesson = Integer.parseInt(p.getProperty("lesson", "0"));
                 s.lesson = Math.max(0, Math.min(lesson, Lessons.ALL.size() - 1));
             } catch (IOException | IllegalArgumentException e) {
@@ -46,6 +49,7 @@ final class Settings {
         Properties p = new Properties();
         p.setProperty("theme", theme);
         p.setProperty("lesson", Integer.toString(lesson));
+        p.setProperty("dvorak", Boolean.toString(dvorak));
         try {
             Files.createDirectories(file.getParent());
             try (Writer out = Files.newBufferedWriter(file)) {

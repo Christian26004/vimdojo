@@ -9,6 +9,7 @@ final class Run {
     private final List<Task> tasks;
     private final int[] keys;
     private final long[] millis;
+    private final StringBuilder[] typed;
     private Vim vim;
     private int index;
     private long taskStart = -1;
@@ -19,6 +20,10 @@ final class Run {
         this.tasks = lesson.tasks().apply(random);
         this.keys = new int[tasks.size()];
         this.millis = new long[tasks.size()];
+        this.typed = new StringBuilder[tasks.size()];
+        for (int i = 0; i < typed.length; i++) {
+            typed[i] = new StringBuilder();
+        }
         Task first = tasks.get(0);
         vim = new Vim(first.start(), first.row(), first.col());
     }
@@ -45,6 +50,11 @@ final class Run {
 
     int keys(int task) {
         return keys[task];
+    }
+
+    /** Every key pressed during a task, in order. */
+    String typed(int task) {
+        return typed[task].toString();
     }
 
     double seconds(int task) {
@@ -74,6 +84,7 @@ final class Run {
             taskStart = now;
         }
         keys[index]++;
+        typed[index].append(c);
         vim.key(c);
         if (task().reached(vim)) {
             millis[index] = now - taskStart;

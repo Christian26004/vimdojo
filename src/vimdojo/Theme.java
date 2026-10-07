@@ -6,28 +6,36 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
+import java.awt.font.TextAttribute;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-/** Colour palette in the Monkeytype sense: background, accent, dimmed text, typed text, errors. */
-public record Theme(String name, Color bg, Color subAlt, Color main, Color sub, Color text,
-                    Color error, Color errorExtra) {
+/**
+ * Colors and type. The look is ink on paper with a single vermilion accent, like a seal on a
+ * page, plus one green kept for marking something done better than expected: a quiet sans-serif for the interface, and monospace only where it is Vim's text or keys.
+ */
+public record Theme(String name, Color bg, Color panel, Color accent, Color sub, Color text,
+                    Color good) {
 
     public static final Theme[] ALL = {
-        of("serika dark", 0x323437, 0x2c2e31, 0xe2b714, 0x646669, 0xd1d0c5, 0xca4754, 0x7e2a33),
-        of("nord", 0x242933, 0x2e3440, 0x88c0d0, 0x617b94, 0xd8dee9, 0xbf616a, 0x793e44),
-        of("dracula", 0x282a36, 0x21222c, 0xbd93f9, 0x6272a4, 0xf8f8f2, 0xff5555, 0xa63232),
-        of("carbon", 0x313131, 0x2b2b2b, 0xf66e0d, 0x616161, 0xf5e6c8, 0xe72d2d, 0x7e2a33),
-        of("paper", 0xeeeeee, 0xdddddd, 0x444444, 0xb2b2b2, 0x444444, 0xd70000, 0xd75f5f),
+        // The first theme is the default.
+        of("ink", 0x1b1a19, 0x272523, 0xe2583e, 0x7d766b, 0xe8e1d3, 0x6fbf8a),
+        of("paper", 0xf4efe6, 0xe9e2d3, 0xc8402f, 0x9a917f, 0x2b2722, 0x3d8f5c),
+        of("moss", 0x1e2923, 0x28362e, 0xe0b04a, 0x7f9186, 0xe6eadf, 0x8fdba6),
+        of("indigo", 0x1c2132, 0x262c42, 0xf08a5d, 0x7c85a3, 0xe4e7f2, 0x7fd1a0),
     };
 
-    private static final String FAMILY = pickFamily();
+    private static final String MONO = pick(Font.MONOSPACED, "JetBrains Mono", "SF Mono", "Menlo",
+            "Cascadia Mono", "Consolas", "DejaVu Sans Mono");
+    private static final String SANS = pick(Font.SANS_SERIF, "Avenir Next", "Segoe UI",
+            "Helvetica Neue", "Inter", "Noto Sans");
     private static Theme current = ALL[0];
 
-    private static Theme of(String name, int bg, int subAlt, int main, int sub, int text,
-                            int error, int errorExtra) {
-        return new Theme(name, new Color(bg), new Color(subAlt), new Color(main), new Color(sub),
-                new Color(text), new Color(error), new Color(errorExtra));
+    private static Theme of(String name, int bg, int panel, int accent, int sub, int text,
+                            int good) {
+        return new Theme(name, new Color(bg), new Color(panel), new Color(accent), new Color(sub),
+                new Color(text), new Color(good));
     }
 
     public static Theme current() {
@@ -48,8 +56,28 @@ public record Theme(String name, Color bg, Color subAlt, Color main, Color sub, 
         return current;
     }
 
-    public static Font font(float size) {
-        return new Font(FAMILY, Font.PLAIN, 1).deriveFont(size);
+    /** The accent at reduced strength, for washes behind text. */
+    public Color wash(int alpha) {
+        return new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), alpha);
+    }
+
+    /** Monospace, for the buffer and for key names. */
+    public static Font mono(float size) {
+        return new Font(MONO, Font.PLAIN, 1).deriveFont(size);
+    }
+
+    /** The interface typeface. */
+    public static Font ui(float size) {
+        return new Font(SANS, Font.PLAIN, 1).deriveFont(size);
+    }
+
+    public static Font bold(float size) {
+        return new Font(SANS, Font.BOLD, 1).deriveFont(size);
+    }
+
+    /** Spaced-out type for small labels; the caller supplies upper-case text. */
+    public static Font caps(float size) {
+        return bold(size).deriveFont(Map.of(TextAttribute.TRACKING, 0.14f));
     }
 
     /** Turns on antialiasing; every custom-painted component starts with this. */
@@ -62,15 +90,14 @@ public record Theme(String name, Color bg, Color subAlt, Color main, Color sub, 
         return g2;
     }
 
-    private static String pickFamily() {
+    private static String pick(String fallback, String... wanted) {
         List<String> installed = Arrays.asList(
                 GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
-        for (String f : new String[] {"Roboto Mono", "JetBrains Mono", "SF Mono", "Menlo",
-                "Cascadia Mono", "Consolas", "DejaVu Sans Mono"}) {
-            if (installed.contains(f)) {
-                return f;
+        for (String family : wanted) {
+            if (installed.contains(family)) {
+                return family;
             }
         }
-        return Font.MONOSPACED;
+        return fallback;
     }
 }

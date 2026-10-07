@@ -22,16 +22,16 @@ public final class Icon {
         // macOS icons sit on a rounded square inset from the canvas edge.
         int pad = size / 10;
         int box = size - 2 * pad;
-        g.setColor(new Color(0x323437));
+        g.setColor(new Color(0xc8402f));
         g.fillRoundRect(pad, pad, box, box, box * 45 / 100, box * 45 / 100);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, box * 48 / 100));
         int textWidth = g.getFontMetrics().stringWidth("vi");
         int caret = box * 4 / 100;
         int x = (size - textWidth - caret * 2) / 2;
         int baseline = pad + box * 64 / 100;
-        g.setColor(new Color(0xd1d0c5));
+        g.setColor(new Color(0xf4efe6));
         g.drawString("vi", x, baseline);
-        g.setColor(new Color(0xe2b714));
+        g.setColor(new Color(0x2b2722));
         g.fillRoundRect(x + textWidth + caret, baseline - box * 36 / 100, caret, box * 42 / 100,
                 caret, caret);
         g.dispose();

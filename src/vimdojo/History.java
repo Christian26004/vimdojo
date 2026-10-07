@@ -58,6 +58,16 @@ final class History {
                 .mapToDouble(Attempt::seconds).min();
     }
 
+    /** Forgets every run, in memory and on disk. */
+    void clear() {
+        attempts.clear();
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            System.err.println("vimdojo: could not erase history: " + e.getMessage());
+        }
+    }
+
     void add(Attempt attempt) {
         attempts.add(attempt);
         try {

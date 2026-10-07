@@ -59,9 +59,12 @@ public final class VimCompare {
                 cases.add(new Case(SAMPLE, start[0], start[1], keys));
             }
         }
+        // Several runs of every lesson, since the tasks are different each time.
         for (Lesson lesson : Lessons.ALL) {
-            for (Task task : lesson.tasks().apply(new Random(1))) {
-                cases.add(new Case(task.start(), task.row(), task.col(), task.solution()));
+            for (int seed = 1; seed <= 12; seed++) {
+                for (Task task : lesson.tasks().apply(new Random(seed))) {
+                    cases.add(new Case(task.start(), task.row(), task.col(), task.solution()));
+                }
             }
         }
         Path dir = Files.createTempDirectory("vimdojo-compare");

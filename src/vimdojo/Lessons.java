@@ -1,6 +1,7 @@
 package vimdojo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -10,10 +11,12 @@ import java.util.function.Function;
 
 /**
  * The curriculum. Movement lessons generate fresh targets every run and work out par by searching
- * for the shortest key sequence; editing lessons are written by hand, each with a known solution.
+ * for the shortest key sequence. Editing lessons are built from templates filled with random
+ * words, each with a known solution that is checked in the built-in Vim before the task is used.
  */
 final class Lessons {
     private static final int DRILL_TASKS = 8;
+    private static final int REVIEW_TASKS = 10;
 
     private static final String FOX = """
             the quick brown fox jumps over
@@ -54,6 +57,509 @@ final class Lessons {
     private static final List<String> WORD = plus(BASIC, "w", "b", "e");
     private static final List<String> LINE = plus(WORD, "0", "^", "$");
 
+
+    // ---- words the editing tasks are filled with ----
+
+    private static final String[] ADJ = {"quick", "lazy", "brown", "small", "quiet", "bright",
+        "green", "clever", "sleepy", "brave", "fuzzy", "shiny"};
+    private static final String[] NOUN = {"fox", "dog", "cat", "owl", "hen", "crow", "wolf",
+        "frog", "goat", "mole", "hare", "duck"};
+    private static final String[] VERB = {"jumps", "walks", "runs", "hops", "leaps", "steps",
+        "climbs", "slides"};
+    private static final String[] PREP = {"over", "under", "past", "near", "around", "behind"};
+    private static final String[] NAME = {"total", "count", "price", "limit", "index", "value",
+        "width", "score", "speed", "delay"};
+    private static final String[] FUNC = {"load", "save", "send", "draw", "sort", "scan", "find",
+        "copy"};
+    private static final String[] EXTRA = {"very", "really", "quite", "rather", "truly"};
+    private static final String[] JUNK = {"TODO remove me", "delete this line", "print(debug)",
+        "old leftover code"};
+    private static final String[] ITEM = {"milk", "eggs", "bread", "rice", "salt", "tea", "jam",
+        "oats", "plums", "honey"};
+    private static final String[][] SEQUENCE = {
+        {"one", "two", "three", "four"}, {"north", "east", "south", "west"},
+        {"spring", "summer", "fall", "winter"}, {"alpha", "beta", "gamma", "delta"},
+        {"first", "second", "third", "fourth"}, {"red", "orange", "yellow", "green"}};
+
+    private static String pick(Random r, String... options) {
+        return options[r.nextInt(options.length)];
+    }
+
+    /** Distinct picks from one pool, in random order. */
+    private static String[] several(Random r, String[] pool, int n) {
+        List<String> all = new ArrayList<>(List.of(pool));
+        Collections.shuffle(all, r);
+        return all.subList(0, n).toArray(String[]::new);
+    }
+
+    /** A lower-case letter that appears nowhere in the text, so f can find it unambiguously. */
+    private static char absentLetter(Random r, String text) {
+        char c;
+        do {
+            c = (char) ('a' + r.nextInt(26));
+        } while (text.indexOf(c) >= 0);
+        return c;
+    }
+
+    /** Marks where the cursor starts, in the notation {@link Task#edit} reads. */
+    private static String at(String text, int index) {
+        return text.substring(0, index) + "|" + text.substring(index);
+    }
+
+    private static String without(String word, int index) {
+        return word.substring(0, index) + word.substring(index + 1);
+    }
+
+    private static String with(String word, int index, char c) {
+        return word.substring(0, index) + c + word.substring(index + 1);
+    }
+
+    private static String assignment(Random r, String name) {
+        return name + " = " + (1 + r.nextInt(9));
+    }
+
+    // ---- the editing lessons, one generator per task ----
+
+    private static final List<Function<Random, Task>> CHARS = List.of(
+        r -> {
+            String word = pick(r, ADJ);
+            int i = r.nextInt(word.length());
+            String rest = " " + pick(r, NOUN) + " " + pick(r, VERB);
+            String typo = word.substring(0, i + 1) + word.substring(i);
+            return Task.edit("delete the extra `" + word.charAt(i) + "` with `x`",
+                at("the " + typo + rest, 4 + i), "the " + word + rest, "x");
+        },
+        r -> {
+            String word = pick(r, ADJ);
+            int i = r.nextInt(word.length());
+            String goal = "the " + word + " " + pick(r, NOUN) + " " + pick(r, VERB);
+            String start = with(goal, 4 + i, absentLetter(r, goal));
+            return Task.edit("replace the wrong letter: `r` then the right one",
+                at(start, 4 + i), goal, "r" + word.charAt(i));
+        },
+        r -> {
+            String word = pick(r, PREP);
+            int i = r.nextInt(word.length());
+            String verb = pick(r, VERB);
+            String rest = " the " + pick(r, ADJ) + " " + pick(r, NOUN);
+            String typo = word.substring(0, i + 1) + word.substring(i);
+            return Task.edit("find the doubled letter and delete one",
+                "|" + verb + " " + typo + rest, verb + " " + word + rest,
+                "f" + word.charAt(i) + "x");
+        },
+        r -> {
+            String word = pick(r, "box", "bag", "cup", "jar", "mug", "pot");
+            String goal = pick(r, "fill", "pack", "stock") + " my " + word + " with "
+                    + pick(r, ITEM);
+            char wrong = absentLetter(r, goal);
+            String typo = with(word, 1, wrong);
+            return Task.edit("fix the word `" + typo + "`",
+                "|" + goal.replace(" " + word + " ", " " + typo + " "), goal,
+                "f" + wrong + "r" + word.charAt(1));
+        },
+        r -> {
+            int n = 2 + r.nextInt(4);
+            String noise = pick(r, "#", "*", "~", "%").repeat(n);
+            String noun = pick(r, NOUN);
+            return Task.edit("a count repeats `x`: remove all " + n + " with `" + n + "x`",
+                "feed |" + noise + "the " + noun, "feed the " + noun, n + "x");
+        },
+        r -> {
+            String word = pick(r, ADJ);
+            int i = r.nextInt(word.length());
+            String goal = "the " + word + " " + pick(r, NOUN) + " " + pick(r, VERB);
+            char wrong = absentLetter(r, goal);
+            String start = with(goal, 4 + i, wrong) + goal.charAt(goal.length() - 1);
+            return Task.edit("two typos: fix both", "|" + start, goal,
+                "f" + wrong + "r" + word.charAt(i) + "$x");
+        });
+
+    private static final List<Function<Random, Task>> INSERT = List.of(
+        r -> {
+            String word = pick(r, ADJ);
+            int i = 1 + r.nextInt(word.length() - 2);
+            String rest = " " + pick(r, NOUN);
+            return Task.edit("press `i`, type the missing `" + word.charAt(i) + "`, then `esc`",
+                at("the " + without(word, i) + rest, 4 + i), "the " + word + rest,
+                "i" + word.charAt(i) + "<esc>");
+        },
+        r -> {
+            String word = pick(r, ADJ);
+            int i = 1 + r.nextInt(word.length() - 1);
+            String rest = " " + pick(r, NOUN);
+            return Task.edit("`a` appends after the cursor: add the `" + word.charAt(i) + "`",
+                at("the " + without(word, i) + rest, 4 + i - 1), "the " + word + rest,
+                "a" + word.charAt(i) + "<esc>");
+        },
+        r -> {
+            String[] adj = several(r, ADJ, 2);
+            String noun = pick(r, NOUN);
+            return Task.edit("add the missing word `" + adj[0] + "`",
+                "|the " + adj[1] + " " + noun, "the " + adj[0] + " " + adj[1] + " " + noun,
+                "wi" + adj[0] + " <esc>");
+        },
+        r -> {
+            String first = pick(r, "hello", "sorry", "thanks", "okay", "well", "listen");
+            String second = pick(r, NOUN);
+            return Task.edit("add a comma after `" + first + "`",
+                "|" + first + " " + second, first + ", " + second, "ea,<esc>");
+        },
+        r -> {
+            String[] n = several(r, NAME, 3);
+            String op = pick(r, "*", "+", "-", "/");
+            return Task.edit("put a `" + op + "` between " + n[1] + " and " + n[2],
+                "|let " + n[0] + " = " + n[1] + " " + n[2] + ";",
+                "let " + n[0] + " = " + n[1] + " " + op + " " + n[2] + ";",
+                "4wi" + op + " <esc>");
+        },
+        r -> {
+            String name = pick(r, NAME);
+            String op = pick(r, "+", "-", "*");
+            int digit = 1 + r.nextInt(9);
+            String goal = name + " " + op + "= " + digit + "0";
+            return Task.edit("two insertions: make it `" + goal + "`",
+                "|" + name + " = " + digit, goal, "wi" + op + "<esc>$a0<esc>");
+        });
+
+    private static final List<Function<Random, Task>> OPEN = List.of(
+        r -> {
+            String line = "return " + pick(r, NAME);
+            return Task.edit("`A` appends at the end of the line: add the `;`",
+                "|" + line, line + ";", "A;<esc>");
+        },
+        r -> {
+            String word = pick(r, "let", "const", "var");
+            String line = assignment(r, pick(r, NAME)) + ";";
+            return Task.edit("`I` inserts at the start: add `" + word + "`",
+                at(line, line.indexOf('=')), word + " " + line, "I" + word + " <esc>");
+        },
+        r -> {
+            String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
+            return Task.edit("`o` opens a line below: add `" + s[2] + "`",
+                s[0] + "\n|" + s[1] + "\n" + s[3], String.join("\n", s), "o" + s[2] + "<esc>");
+        },
+        r -> {
+            String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
+            return Task.edit("`O` opens a line above: add `" + s[0] + "`",
+                "|" + s[1] + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2], "O" + s[0] + "<esc>");
+        },
+        r -> {
+            String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
+            return Task.edit("add a line above and a line below",
+                "|" + s[1], s[0] + "\n" + s[1] + "\n" + s[2],
+                "O" + s[0] + "<esc>jo" + s[2] + "<esc>");
+        },
+        r -> {
+            String name = pick(r, NAME);
+            String func = pick(r, FUNC);
+            return Task.edit("add to both ends of the line",
+                name + " |= " + func, "const " + name + " = " + func + "();",
+                "Iconst <esc>A();<esc>");
+        });
+
+    private static final List<Function<Random, Task>> DELETE = List.of(
+        r -> {
+            String rest = pick(r, ADJ) + " " + pick(r, NOUN);
+            return Task.edit("delete the extra word with `dw`",
+                "the |" + pick(r, EXTRA) + " " + rest, "the " + rest, "dw");
+        },
+        r -> {
+            String[] n = several(r, NAME, 2);
+            List<String> lines = new ArrayList<>(List.of(assignment(r, n[0]),
+                    assignment(r, n[1])));
+            String goal = String.join("\n", lines);
+            lines.add(r.nextInt(3), "|" + pick(r, JUNK));
+            return Task.edit("`dd` deletes the whole line", String.join("\n", lines), goal, "dd");
+        },
+        r -> {
+            String line = assignment(r, pick(r, NAME)) + ";";
+            return Task.edit("`D` deletes from the cursor to the end of the line",
+                line + "| // " + pick(r, "temporary", "fix later", "old value", "remove"), line,
+                "D");
+        },
+        r -> {
+            String call = pick(r, FUNC) + "(" + pick(r, NAME) + ")";
+            return Task.edit("`d` takes any motion: `d0` deletes back to the line start",
+                pick(r, "debug", "todo", "note", "temp") + ": |" + call, call, "d0");
+        },
+        r -> {
+            String[] n = several(r, NAME, 4);
+            String keep = pick(r, FUNC) + "(" + n[0] + ", " + n[1];
+            return Task.edit("`dt)` deletes up to the parenthesis",
+                keep + "|, " + n[2] + ", " + n[3] + ")", keep + ")", "dt)");
+        },
+        r -> {
+            String header = pick(r, NAME) + " report";
+            StringBuilder start = new StringBuilder(header);
+            for (int i = 0, n = 2 + r.nextInt(3); i < n; i++) {
+                start.append(i == 0 ? "\n|" : "\n").append("junk ").append(i + 1);
+            }
+            return Task.edit("`dG` deletes from this line to the end of the file",
+                start.toString(), header, "dG");
+        });
+
+    private static final List<Function<Random, Task>> CHANGE = List.of(
+        r -> {
+            String[] adj = several(r, ADJ, 3);
+            String rest = " " + adj[2] + " " + pick(r, NOUN);
+            return Task.edit("`cw` replaces a word: make it `" + adj[0] + "`",
+                "the |" + adj[1] + rest, "the " + adj[0] + rest, "cw" + adj[0] + "<esc>");
+        },
+        r -> {
+            String[] n = several(r, NAME, 3);
+            return Task.edit("`C` changes the rest of the line: return `" + n[2] + "`",
+                "return |" + n[0] + " + " + n[1] + ";", "return " + n[2] + ";",
+                "C" + n[2] + ";<esc>");
+        },
+        r -> {
+            String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
+            String typo = "" + s[1].charAt(1) + s[1].charAt(0) + s[1].substring(2);
+            return Task.edit("`cc` rewrites the whole line: fix `" + typo + "`",
+                s[0] + "\n|" + typo + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2],
+                "cc" + s[1] + "<esc>");
+        },
+        r -> {
+            String[] c = several(r, new String[] {"red", "blue", "gold", "teal", "pink", "gray"},
+                    2);
+            String property = pick(r, "color", "border", "fill");
+            return Task.edit("`ct;` changes up to the semicolon: make it `" + c[1] + "`",
+                property + ": |" + c[0] + "; /* keep */", property + ": " + c[1] + "; /* keep */",
+                "ct;" + c[1] + "<esc>");
+        },
+        r -> {
+            String name = pick(r, NAME);
+            int to = 100 + r.nextInt(900);
+            return Task.edit("change the number to `" + to + "`",
+                "|const " + name + " = " + (10 + r.nextInt(90)) + ";",
+                "const " + name + " = " + to + ";", "$bcw" + to + "<esc>");
+        },
+        r -> {
+            String[] adj = several(r, ADJ, 3);
+            String[] prep = several(r, PREP, 2);
+            String middle = " " + pick(r, NOUN) + " " + pick(r, VERB) + " ";
+            return Task.edit("two words are wrong: change both",
+                "|the " + adj[0] + " " + adj[1] + middle + prep[0],
+                "the " + adj[0] + " " + adj[2] + middle + prep[1],
+                "2wcw" + adj[2] + "<esc>$bcw" + prep[1] + "<esc>");
+        });
+
+    private static final List<Function<Random, Task>> PUT = List.of(
+        r -> {
+            String line = pick(r, FUNC) + "(" + pick(r, NAME) + ")";
+            return Task.edit("duplicate the line: `yy` then `p`",
+                "|" + line, line + "\n" + line, "yyp");
+        },
+        r -> {
+            String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
+            return Task.edit("move the line down: `dd` then `p`",
+                "|" + s[1] + "\n" + s[0] + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2], "ddp");
+        },
+        r -> {
+            String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
+            return Task.edit("move `" + s[0] + "` to the top: `P` puts above",
+                s[1] + "\n|" + s[0] + "\n" + s[2], s[0] + "\n" + s[1] + "\n" + s[2], "ddkP");
+        },
+        r -> {
+            String word = pick(r, ADJ);
+            int i = r.nextInt(word.length() - 1);
+            String typo = word.substring(0, i) + word.charAt(i + 1) + word.charAt(i)
+                    + word.substring(i + 2);
+            String rest = " " + pick(r, NOUN);
+            return Task.edit("swap two letters with `xp`",
+                at("the " + typo + rest, 4 + i), "the " + word + rest, "xp");
+        },
+        r -> {
+            String word = pick(r, "very", "so", "too", "far");
+            String rest = " " + pick(r, ADJ);
+            return Task.edit("copy a word: `yw`, then put it",
+                "|" + word + rest, word + " " + word + rest, "ywP");
+        },
+        r -> {
+            String word = pick(r, ITEM);
+            int copies = 2 + r.nextInt(2);
+            return Task.edit("make " + (copies + 1) + " rows of `" + word + "`",
+                "|" + word + "\nend", (word + "\n").repeat(copies + 1) + "end",
+                copies == 2 ? "yypp" : "yy3p");
+        });
+
+    private static final List<Function<Random, Task>> COUNTS = List.of(
+        r -> {
+            int n = 2 + r.nextInt(2);
+            String rest = pick(r, ADJ) + " " + pick(r, NOUN);
+            return Task.edit("`d" + n + "w` deletes " + n + " words at once",
+                "the |" + (pick(r, EXTRA) + " ").repeat(n) + rest, "the " + rest, "d" + n + "w");
+        },
+        r -> {
+            int n = 2 + r.nextInt(3);
+            StringBuilder start = new StringBuilder("keep");
+            for (int i = 0; i < n; i++) {
+                start.append(i == 0 ? "\n|" : "\n").append("drop ").append(i + 1);
+            }
+            return Task.edit("`" + n + "dd` deletes " + n + " lines",
+                start + "\nkeep too", "keep\nkeep too", n + "dd");
+        },
+        r -> {
+            String[] adj = several(r, ADJ, 3);
+            String noun = " " + pick(r, NOUN);
+            return Task.edit("`c2w` changes two words: make it `" + adj[2] + "`",
+                "the |" + adj[0] + " " + adj[1] + noun, "the " + adj[2] + noun,
+                "c2w" + adj[2] + "<esc>");
+        },
+        r -> {
+            String[] s = SEQUENCE[r.nextInt(SEQUENCE.length)];
+            return Task.edit("move two lines to the bottom: `2dd`, then put",
+                "|" + s[2] + "\n" + s[3] + "\n" + s[0] + "\n" + s[1], String.join("\n", s),
+                "2ddjp");
+        },
+        r -> {
+            String[] n = several(r, NAME, 2);
+            String two = assignment(r, n[0]) + "\n" + assignment(r, n[1]);
+            return Task.edit("copy the first two lines to the end: `2yy`",
+                "|" + two + "\n---", two + "\n---\n" + two, "2yyGp");
+        },
+        r -> {
+            String[] adj = several(r, ADJ, 2);
+            String verb = pick(r, VERB);
+            return Task.edit("`d2b` deletes two words backward",
+                "the " + adj[0] + " " + adj[1] + " " + pick(r, NOUN) + " |" + verb,
+                "the " + adj[0] + " " + verb, "d2b");
+        });
+
+    private static final List<Function<Random, Task>> OBJECTS = List.of(
+        r -> {
+            String word = pick(r, ADJ);
+            String before = "the " + pick(r, EXTRA) + " ";
+            String noun = pick(r, NOUN);
+            return Task.edit("`daw` deletes a word from anywhere inside it",
+                at(before + word + " " + noun, before.length() + 1 + r.nextInt(word.length() - 1)),
+                before + noun, "daw");
+        },
+        r -> {
+            String[] adj = several(r, ADJ, 2);
+            String noun = " " + pick(r, NOUN);
+            return Task.edit("`ciw` changes the word under the cursor: make it `" + adj[1] + "`",
+                at("the " + adj[0] + noun, 4 + 1 + r.nextInt(adj[0].length() - 1)),
+                "the " + adj[1] + noun, "ciw" + adj[1] + "<esc>");
+        },
+        r -> {
+            String func = pick(r, "say", "print", "log", "show");
+            String[] words = several(r, ITEM, 3);
+            String old = words[0] + " " + words[1];
+            return Task.edit("`ci\"` changes what is inside the quotes: make it `" + words[2] + "`",
+                at(func + "(\"" + old + "\")", func.length() + 2 + 1 + r.nextInt(old.length() - 1)),
+                func + "(\"" + words[2] + "\")", "ci\"" + words[2] + "<esc>");
+        },
+        r -> {
+            String[] n = several(r, NAME, 3);
+            String func = pick(r, FUNC);
+            return Task.edit("`di(` empties the parentheses",
+                func + "(" + n[0] + ", |" + n[1] + ", " + n[2] + ")", func + "()", "di(");
+        },
+        r -> {
+            String flag = pick(r, "ready", "done", "valid", "empty");
+            return Task.edit("`ci(` replaces the condition with `" + flag + "`",
+                "if (" + pick(r, NAME) + " |" + pick(r, ">", "<", "==") + " "
+                        + (2 + r.nextInt(98)) + ") {",
+                "if (" + flag + ") {", "ci(" + flag + "<esc>");
+        },
+        r -> {
+            String name = pick(r, NAME);
+            String[] words = several(r, ITEM, 2);
+            return Task.edit("`ci\"` even reaches the next quotes on the line: make it `"
+                    + words[1] + "`",
+                "|" + name + " = \"old " + words[0] + "\";", name + " = \"" + words[1] + "\";",
+                "ci\"" + words[1] + "<esc>");
+        });
+
+    private static final List<Function<Random, Task>> REPEAT = List.of(
+        r -> {
+            int n = 3 + r.nextInt(2);
+            String last = pick(r, "yes", "go", "done", "stop");
+            return Task.edit("delete a word, then repeat with `.`",
+                "|" + (pick(r, "no", "um", "so", "ha") + " ").repeat(n) + last, last,
+                "dw" + ".".repeat(n - 1));
+        },
+        r -> {
+            String[] n = several(r, NAME, 3);
+            String[] lines = {assignment(r, n[0]), assignment(r, n[1]), assignment(r, n[2])};
+            return Task.edit("append `;` to one line, then `j.` for the rest",
+                "|" + String.join("\n", lines), String.join(";\n", lines) + ";", "A;<esc>j.j.");
+        },
+        r -> {
+            String[] keep = several(r, ITEM, 3);
+            String drop = pick(r, "drop", "junk", "skip");
+            return Task.edit("delete every `" + drop + "` line: `dd`, move, `.`",
+                keep[0] + "\n|" + drop + "\n" + keep[1] + "\n" + drop + "\n" + keep[2],
+                String.join("\n", keep), "ddj.");
+        },
+        r -> {
+            String[] items = several(r, ITEM, 3);
+            String bullet = pick(r, "-", "*", ">");
+            return Task.edit("make it a list: `I" + bullet + " `, then repeat on each line",
+                "|" + String.join("\n", items),
+                bullet + " " + String.join("\n" + bullet + " ", items),
+                "I" + bullet + " <esc>j.j.");
+        },
+        r -> {
+            String[] letters = several(r, "a b c d e g h k m n p s".split(" "), 4);
+            String gap = pick(r, "-", "_", "+");
+            return Task.edit("turn each `" + gap + "` into a space: `;` repeats the find, `.`"
+                    + " the change",
+                "|" + String.join(gap, letters), String.join(" ", letters),
+                "f" + gap + "r ;.;.");
+        },
+        r -> {
+            String[] n = several(r, NAME, 3);
+            return Task.edit("rename every `" + n[0] + "` to `" + n[1] + "`",
+                "|" + n[0] + "(" + n[0] + ", " + n[2] + ", " + n[0] + ")",
+                n[1] + "(" + n[1] + ", " + n[2] + ", " + n[1] + ")",
+                "cw" + n[1] + "<esc>ww.$b.");
+        });
+
+    private static final List<Function<Random, Task>> VISUAL = List.of(
+        r -> {
+            String[] keep = several(r, ITEM, 2);
+            return Task.edit("select both lines with `V` and `j`, then `d`",
+                keep[0] + "\n|drop\ndrop too\n" + keep[1], keep[0] + "\n" + keep[1], "Vjd");
+        },
+        r -> {
+            String[] n = several(r, NAME, 4);
+            String func = pick(r, "max", "min", "abs", "sum");
+            return Task.edit("select up to the parenthesis with `vt)`, then `c`: make it `" + n[3]
+                    + "`",
+                func + "(|" + n[0] + " + " + n[1] + " * " + n[2] + ")", func + "(" + n[3] + ")",
+                "vt)c" + n[3] + "<esc>");
+        },
+        r -> {
+            String word = pick(r, ADJ);
+            String noun = pick(r, NOUN);
+            return Task.edit("`vaw` selects a word; delete it",
+                at("the " + word + " " + noun, 4 + 1 + r.nextInt(word.length() - 1)),
+                "the " + noun, "vawd");
+        },
+        r -> {
+            String[] items = several(r, ITEM, 2);
+            String two = items[0] + "\n" + items[1];
+            return Task.edit("copy two lines to the end: `Vjy`, then put",
+                "|" + two + "\n---", two + "\n---\n" + two, "VjyGp");
+        },
+        r -> {
+            String fresh = pick(r, ITEM);
+            return Task.edit("replace both lines with `" + fresh + "`: select them, then `c`",
+                "start\n|old line 1\nold line 2\nend", "start\n" + fresh + "\nend",
+                "Vjc" + fresh + "<esc>");
+        },
+        r -> {
+            String title = pick(r, NAME) + " list";
+            String[] items = several(r, ITEM, 2 + r.nextInt(3));
+            return Task.edit("`VG` selects to the end of the file",
+                title + "\n|" + String.join("\n", items), title, "VGd");
+        });
+
+    /** Every editing task there is, for the review to draw on. */
+    private static final List<Function<Random, Task>> EVERYTHING = joined(List.of(CHARS, INSERT,
+            OPEN, DELETE, CHANGE, PUT, COUNTS, OBJECTS, REPEAT, VISUAL));
+
     static final List<Lesson> ALL = List.of(
         new Lesson("hjkl", "moving around", List.of(
                 key("h", "left"), key("j", "down"), key("k", "up"), key("l", "right")),
@@ -81,7 +587,7 @@ final class Lessons {
 
         new Lesson("find", "find a character", List.of(
                 key("fx", "onto the next x in the line"), key("tx", "just before the next x"),
-                key("F T", "the same, backwards"), key(";", "repeat the find"),
+                key("F T", "the same, backward"), key(";", "repeat the find"),
                 key(",", "repeat it the other way")),
             drill("find your way to the highlight", List.of(FOX, TOOLS, RENDER),
                 Lessons::findMoves, text -> LINE, 2, 3)),
@@ -89,182 +595,61 @@ final class Lessons {
         new Lesson("chars", "fixing characters", List.of(
                 key("x", "delete the character under the cursor"),
                 key("rx", "replace it with x"), key("u", "undo - works everywhere")),
-            fixed(
-                Task.edit("delete the extra `u` with `x`",
-                    "the q|uuick brown fox", "the quick brown fox", "x"),
-                Task.edit("replace the wrong letter: `r` then the right one",
-                    "the quick br|awn fox", "the quick brown fox", "ro"),
-                Task.edit("find the doubled letter and delete one",
-                    "|jumps ovver the lazy dog", "jumps over the lazy dog", "fvx"),
-                Task.edit("fix the word `bax`",
-                    "|fill my bax with jugs", "fill my box with jugs", "faro"),
-                Task.edit("a count repeats `x`: remove all three with `3x`",
-                    "remove |xxxthe noise", "remove the noise", "3x"),
-                Task.edit("two typos: fix both",
-                    "|the lazi dog sleepss", "the lazy dog sleeps", "firy$x"))),
+            each(CHARS)),
 
         new Lesson("insert", "inserting text", List.of(
                 key("i", "insert before the cursor"), key("a", "append after the cursor"),
                 key("esc", "back to normal mode")),
-            fixed(
-                Task.edit("press `i`, type the missing `o`, then `esc`",
-                    "the quick br|wn fox", "the quick brown fox", "io<esc>"),
-                Task.edit("`a` appends after the cursor: add the `k`",
-                    "the qui|c brown fox", "the quick brown fox", "ak<esc>"),
-                Task.edit("add the missing word `quick`",
-                    "|the brown fox", "the quick brown fox", "wiquick <esc>"),
-                Task.edit("add a comma after `hello`",
-                    "|hello world", "hello, world", "ea,<esc>"),
-                Task.edit("put a `*` between price and count",
-                    "|let total = price count;", "let total = price * count;", "4wi* <esc>"),
-                Task.edit("two insertions: make it `x += 10`",
-                    "|x = 1", "x += 10", "wi+<esc>$a0<esc>"))),
+            each(INSERT)),
 
         new Lesson("open", "inserting at the edges", List.of(
                 key("I", "insert at the start of the line"),
                 key("A", "append at the end of the line"),
                 key("o", "open a new line below"), key("O", "open a new line above")),
-            fixed(
-                Task.edit("`A` appends at the end of the line: add the `;`",
-                    "|return total", "return total;", "A;<esc>"),
-                Task.edit("`I` inserts at the start: add `let `",
-                    "total |= 0;", "let total = 0;", "Ilet <esc>"),
-                Task.edit("`o` opens a line below: add `three`",
-                    "one\n|two\nfour", "one\ntwo\nthree\nfour", "othree<esc>"),
-                Task.edit("`O` opens a line above: add `one`",
-                    "|two\nthree", "one\ntwo\nthree", "Oone<esc>"),
-                Task.edit("add a line above and a line below",
-                    "|second", "first\nsecond\nthird", "Ofirst<esc>jothird<esc>"),
-                Task.edit("add to both ends of the line",
-                    "name |= input", "const name = input();", "Iconst <esc>A();<esc>"))),
+            each(OPEN)),
 
         new Lesson("delete", "the delete operator", List.of(
                 key("dw", "delete a word"), key("dd", "delete the line"),
                 key("D", "delete to the end of the line"),
                 key("d + motion", "delete wherever that motion goes: d0, dt), dG")),
-            fixed(
-                Task.edit("delete the extra word with `dw`",
-                    "the |very quick fox", "the quick fox", "dw"),
-                Task.edit("`dd` deletes the whole line",
-                    "keep this\n|remove this\nkeep this too", "keep this\nkeep this too", "dd"),
-                Task.edit("`D` deletes from the cursor to the end of the line",
-                    "total = 0;| // temporary", "total = 0;", "D"),
-                Task.edit("`d` takes any motion: `d0` deletes back to the line start",
-                    "debug: |save(file)", "save(file)", "d0"),
-                Task.edit("`dt)` deletes up to the bracket",
-                    "sum(a, b|, c, d)", "sum(a, b)", "dt)"),
-                Task.edit("`dG` deletes from this line to the end of the file",
-                    "header\n|junk one\njunk two", "header", "dG"))),
+            each(DELETE)),
 
         new Lesson("change", "the change operator", List.of(
                 key("cw", "change a word: delete it and start typing"),
                 key("cc", "change the whole line"),
                 key("C", "change to the end of the line"),
                 key("c + motion", "works like d, then leaves you in insert mode")),
-            fixed(
-                Task.edit("`cw` replaces a word: make it `quick`",
-                    "the |slow brown fox", "the quick brown fox", "cwquick<esc>"),
-                Task.edit("`C` changes the rest of the line",
-                    "return |a + b;", "return total;", "Ctotal;<esc>"),
-                Task.edit("`cc` rewrites the whole line",
-                    "one\n|tow\nthree", "one\ntwo\nthree", "cctwo<esc>"),
-                Task.edit("`ct;` changes up to the semicolon",
-                    "color: |red; /* keep */", "color: blue; /* keep */", "ct;blue<esc>"),
-                Task.edit("change the number to `250`",
-                    "|const limit = 10;", "const limit = 250;", "$bcw250<esc>"),
-                Task.edit("two words are wrong: change both",
-                    "|the quick red fox jumps under", "the quick brown fox jumps over",
-                    "2wcwbrown<esc>$bcwover<esc>"))),
+            each(CHANGE)),
 
         new Lesson("put", "copy and paste", List.of(
                 key("yy", "yank (copy) the line"), key("yw", "yank a word"),
                 key("p", "put after the cursor"), key("P", "put before the cursor"),
                 key("dd p", "deleted text can be put back too")),
-            fixed(
-                Task.edit("duplicate the line: `yy` then `p`",
-                    "|echo hello", "echo hello\necho hello", "yyp"),
-                Task.edit("move the line down: `dd` then `p`",
-                    "|second\nfirst\nthird", "first\nsecond\nthird", "ddp"),
-                Task.edit("move `one` to the top: `P` puts above",
-                    "two\n|one\nthree", "one\ntwo\nthree", "ddkP"),
-                Task.edit("swap two letters with `xp`",
-                    "the |uqick fox", "the quick fox", "xp"),
-                Task.edit("copy a word: `yw`, then put it",
-                    "|very good", "very very good", "ywP"),
-                Task.edit("make three copies of the first line",
-                    "|row\nend", "row\nrow\nrow\nend", "yypp"))),
+            each(PUT)),
 
         new Lesson("counts", "counts with operators", List.of(
                 key("d2w", "delete two words"), key("3dd", "delete three lines"),
                 key("c2w", "change two words"),
-                key("operator + count + motion", "they all combine")),
-            fixed(
-                Task.edit("`d2w` deletes two words at once",
-                    "the |very very quick fox", "the quick fox", "d2w"),
-                Task.edit("`3dd` deletes three lines",
-                    "keep\n|drop 1\ndrop 2\ndrop 3\nkeep too", "keep\nkeep too", "3dd"),
-                Task.edit("`c2w` changes two words: make it `brown`",
-                    "the |dark red fox", "the brown fox", "c2wbrown<esc>"),
-                Task.edit("move two lines to the bottom: `2dd`, then put",
-                    "|c\nd\na\nb", "a\nb\nc\nd", "2ddjp"),
-                Task.edit("copy the first two lines to the end: `2yy`",
-                    "|a = 1\nb = 2\n---", "a = 1\nb = 2\n---\na = 1\nb = 2", "2yyGp"),
-                Task.edit("`d2b` deletes two words backwards",
-                    "the quick brown fox |jumps", "the quick jumps", "d2b"))),
+                key("y3w", "any operator, count and motion combine")),
+            each(COUNTS)),
 
         new Lesson("objects", "text objects", List.of(
                 key("iw", "inner word - the word the cursor is in"),
                 key("aw", "a word, with its space"),
-                key("i\"", "inside the quotes"), key("i(", "inside the brackets"),
+                key("i\"", "inside the quotes"), key("i(", "inside the parentheses"),
                 key("d c y", "use them after an operator: ciw, di(, ya\"")),
-            fixed(
-                Task.edit("`daw` deletes a word from anywhere inside it",
-                    "the very qu|ick fox", "the very fox", "daw"),
-                Task.edit("`ciw` changes the word under the cursor",
-                    "the bro|ken fox", "the brown fox", "ciwbrown<esc>"),
-                Task.edit("`ci\"` changes what is inside the quotes",
-                    "say(\"hel|lo there\")", "say(\"goodbye\")", "ci\"goodbye<esc>"),
-                Task.edit("`di(` empties the brackets",
-                    "call(alpha, |beta, gamma)", "call()", "di("),
-                Task.edit("`ci(` replaces the condition",
-                    "if (x |> 10) {", "if (ready) {", "ci(ready<esc>"),
-                Task.edit("`ci\"` even reaches the next quotes on the line",
-                    "|name = \"old value\";", "name = \"new\";", "ci\"new<esc>"))),
+            each(OBJECTS)),
 
         new Lesson("repeat", "repeat and undo", List.of(
                 key(".", "repeat the last change"), key("u", "undo"),
                 key("ctrl-r", "redo")),
-            fixed(
-                Task.edit("delete a word, then repeat with `.`",
-                    "|no no no yes", "yes", "dw.."),
-                Task.edit("append `;` to one line, then `j.` for the rest",
-                    "|a = 1\nb = 2\nc = 3", "a = 1;\nb = 2;\nc = 3;", "A;<esc>j.j."),
-                Task.edit("delete every `drop` line: `dd`, move, `.`",
-                    "keep\n|drop\nkeep\ndrop\nkeep", "keep\nkeep\nkeep", "ddj."),
-                Task.edit("make it a list: `I- `, then repeat on each line",
-                    "|milk\neggs\nbread", "- milk\n- eggs\n- bread", "I- <esc>j.j."),
-                Task.edit("turn each `-` into a space: `;` repeats the find, `.` the change",
-                    "|a-b-c-d", "a b c d", "f-r ;.;."),
-                Task.edit("rename every `foo` to `baz`",
-                    "|foo(foo, bar, foo)", "baz(baz, bar, baz)", "cwbaz<esc>ww.$b."))),
+            each(REPEAT)),
 
         new Lesson("visual", "visual mode", List.of(
                 key("v", "select characters"), key("V", "select whole lines"),
                 key("motions", "grow the selection"),
                 key("d y c", "act on it"), key("esc", "cancel")),
-            fixed(
-                Task.edit("select both lines with `V` and `j`, then `d`",
-                    "keep\n|drop\ndrop too\nkeep", "keep\nkeep", "Vjd"),
-                Task.edit("select up to the bracket with `vt)`, then `c`",
-                    "max(|a + b * c)", "max(total)", "vt)ctotal<esc>"),
-                Task.edit("`vaw` selects a word; delete it",
-                    "the qu|ick fox", "the fox", "vawd"),
-                Task.edit("copy two lines to the end: `Vjy`, then put",
-                    "|one\ntwo\n---", "one\ntwo\n---\none\ntwo", "VjyGp"),
-                Task.edit("replace both lines: select them, then `c`",
-                    "start\n|old line 1\nold line 2\nend", "start\nnew\nend", "Vjcnew<esc>"),
-                Task.edit("`VG` selects to the end of the file",
-                    "title\n|a\nb\nc", "title", "VGd"))),
+            each(VISUAL)),
 
         new Lesson("search", "searching", List.of(
                 key("/text", "then enter: jump to the next match"),
@@ -278,12 +663,61 @@ final class Lessons {
                     PIPELINE, 8, 8, 1, 8, 7, "/load<enter>n"),
                 Task.motion("`N` goes back to the previous match",
                     PIPELINE, 1, 8, 0, 8, 1, "N"),
-                Task.motion("jump to `golf` inside the brackets on line 8",
+                Task.motion("jump to `golf` inside the parentheses on line 8",
                     PIPELINE, 0, 8, 7, 25, 7, "/golf<enter>n"),
                 Task.motion("finish on `merge`",
-                    PIPELINE, 7, 25, 2, 10, 4, "/me<enter>"))));
+                    PIPELINE, 7, 25, 2, 10, 4, "/me<enter>"))),
+
+        new Lesson("review", "mixed review", List.of(), Lessons::review,
+            "No hints here. Ten edits drawn from every lesson, in random order: make the text "
+                + "match the goal with whichever keys you think are best."));
 
     private Lessons() {
+    }
+
+    private static List<Function<Random, Task>> joined(List<List<Function<Random, Task>>> lists) {
+        List<Function<Random, Task>> all = new ArrayList<>();
+        lists.forEach(all::addAll);
+        return List.copyOf(all);
+    }
+
+    /** A lesson made of one task from each generator, in teaching order. */
+    private static Function<Random, List<Task>> each(List<Function<Random, Task>> generators) {
+        return random -> generators.stream().map(g -> checked(g, random)).toList();
+    }
+
+    /** Ten tasks from anywhere in the curriculum, with the telltale prompts removed. */
+    private static List<Task> review(Random random) {
+        List<Function<Random, Task>> pool = new ArrayList<>(EVERYTHING);
+        Collections.shuffle(pool, random);
+        List<Task> tasks = new ArrayList<>();
+        for (Function<Random, Task> generator : pool.subList(0, REVIEW_TASKS)) {
+            Task t = checked(generator, random);
+            tasks.add(new Task("make the text match the goal", t.start(), t.row(), t.col(),
+                    t.goal(), t.goalRow(), t.goalCol(), t.par(), t.solution()));
+        }
+        return tasks;
+    }
+
+    /**
+     * Runs a generator until it produces a task whose solution really works: random words can
+     * collide, for example when the letter to find also appears earlier in the line.
+     */
+    private static Task checked(Function<Random, Task> generator, Random random) {
+        for (int attempt = 0; attempt < 200; attempt++) {
+            Task task = generator.apply(random);
+            Vim vim = new Vim(task.start(), task.row(), task.col());
+            String keys = Keys.parse(task.solution());
+            boolean early = task.reached(vim);
+            for (int i = 0; i < keys.length() && !early; i++) {
+                vim.key(keys.charAt(i));
+                early = i < keys.length() - 1 && task.reached(vim);
+            }
+            if (!early && task.reached(vim)) {
+                return task;
+            }
+        }
+        throw new IllegalStateException("a task generator never produced a solvable task");
     }
 
     private static Lesson.Key key(String key, String does) {

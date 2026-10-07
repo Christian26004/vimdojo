@@ -5,9 +5,12 @@ import java.util.Locale;
 /** A finished run of a lesson. One of these is one line of the history file. */
 record Attempt(long timestamp, String lesson, double seconds, int keys, int par, int tasks) {
 
-    /** How close the keystroke count came to par; 100 means no wasted keys. */
+    /**
+     * Par as a percentage of the keys used: 100 means exactly par, less means wasted keys, and
+     * more than 100 means the run beat par.
+     */
     double efficiency() {
-        return keys == 0 ? 0 : Math.min(100, 100.0 * par / keys);
+        return keys == 0 ? 0 : 100.0 * par / keys;
     }
 
     String toLine() {

@@ -12,6 +12,15 @@ final class Keys {
     private Keys() {
     }
 
+    /** The reverse of {@link #parse}: raw keys back into readable notation. */
+    static String notation(String keys) {
+        String notation = keys;
+        for (String[] named : NAMED) {
+            notation = notation.replace(named[1], named[0]);
+        }
+        return notation;
+    }
+
     static String parse(String notation) {
         String keys = notation;
         for (String[] named : NAMED) {

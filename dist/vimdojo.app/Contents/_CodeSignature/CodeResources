@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/vimdojo.icns</key>
 		<data>
-		SV1qZvsSZxdsiTBDg0hw3yyCM1U=
+		g+onycfY7nsOEpXJPvBKFGeqyio=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -15,7 +15,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			IQzOeFX6ajPO467Bp6xMQOujkXCbRTCXrxZcHx4qpt0=
+			k2NgP94hfqU0Uk6KyjNdradbuALos/I4zFuQuL4rW7M=
 			</data>
 		</dict>
 		<key>app/.jpackage.xml</key>
@@ -36,7 +36,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			yCBtpuBkOePkxMkhnlxJ3uXUdbzEcYAEeYHm8yPnw2c=
+			T1ROzs4viFD3QRtEHHl0LBzbvBmx9oyQ2TCYS5jEz70=
 			</data>
 		</dict>
 		<key>runtime/Contents/Home/conf/jaxp-strict.properties.template</key>

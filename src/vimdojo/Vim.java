@@ -8,7 +8,7 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * A small Vim: enough of normal, insert, visual and search mode to practise the core keys.
+ * A small Vim: enough of normal, insert, visual and search mode to practice the core keys.
  * Feed it one key at a time with {@link #key(char)}; it has no UI of its own.
  */
 final class Vim {
@@ -105,6 +105,26 @@ final class Vim {
 
     String searchText() {
         return search.toString();
+    }
+
+    /**
+     * The text whose matches should be lit up: what is being typed after "/", or once that is
+     * entered, the last search. Empty if there is nothing to highlight.
+     */
+    String highlight() {
+        return mode == Mode.SEARCH ? search.toString() : lastSearch;
+    }
+
+    /** While a search is being typed, the row and column enter would jump to; otherwise null. */
+    int[] searchPreview() {
+        if (mode != Mode.SEARCH || search.isEmpty()) {
+            return null;
+        }
+        String entered = lastSearch;
+        lastSearch = search.toString();
+        Target t = search(true, 1);
+        lastSearch = entered;
+        return t == null ? null : new int[] {t.row, t.col};
     }
 
     void place(int row, int col, int want) {
