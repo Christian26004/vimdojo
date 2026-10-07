@@ -581,6 +581,35 @@ public final class NavTest {
                         + ": the entry changes height while its example plays");
             }
         }
+        // Scrolling a long entry stops at its end and stays there, however many scrolls come.
+        int longest = 0;
+        int tallest = 0;
+        for (int i = 0; i < Docs.ALL.size(); i++) {
+            docsView.select(i);
+            docsView.paint(pg);
+            if (docsView.detailHeight() > tallest) {
+                tallest = docsView.detailHeight();
+                longest = i;
+            }
+        }
+        docsView.select(longest);
+        docsView.paint(pg);
+        int previous = -1;
+        for (int i = 0; i < 60; i++) {
+            java.awt.event.MouseWheelEvent wheel = new java.awt.event.MouseWheelEvent(docsView,
+                    java.awt.event.MouseEvent.MOUSE_WHEEL, 0, 0, 800, 200, 0, false,
+                    java.awt.event.MouseWheelEvent.WHEEL_UNIT_SCROLL, 1, 1);
+            for (java.awt.event.MouseWheelListener l : docsView.getMouseWheelListeners()) {
+                l.mouseWheelMoved(wheel);
+            }
+            int scrolled = docsView.detailScroll();
+            docsView.paint(pg);
+            check(docsView.detailScroll() == scrolled,
+                    "the paint never has to pull the text back after a scroll");
+            check(scrolled >= previous, "scrolling down never jumps back up");
+            previous = scrolled;
+        }
+        check(previous > 0, "a long entry does scroll");
         pg.dispose();
 
         // It opens over any screen, including mid-lesson, and gives the screen back on closing.

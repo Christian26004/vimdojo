@@ -101,7 +101,7 @@ final class DocsView extends JComponent {
         addMouseWheelListener(e -> {
             int amount = (int) Math.round(e.getPreciseWheelRotation() * ROW);
             if (e.getX() > detailLeft() - 18) {
-                detailScroll = Math.max(0, detailScroll + amount);
+                scrollDetailTo(detailScroll + amount);
             } else {
                 scroll = clamp(scroll + amount);
             }
@@ -170,8 +170,26 @@ final class DocsView extends JComponent {
 
     /** d and u: half a window down or up through the selected entry's text. */
     private void scrollDetail(int direction) {
-        detailScroll = Math.max(0, detailScroll + direction * (getHeight() - TOP - BOTTOM) / 2);
+        scrollDetailTo(detailScroll + direction * (getHeight() - TOP - BOTTOM) / 2);
+    }
+
+    /**
+     * Scrolls the entry's text, never past either end: drawing it past the end and pulling it
+     * back on the next paint made it judder at the bottom, worst with a trackpad's many small
+     * scrolls.
+     */
+    private void scrollDetailTo(int position) {
+        detailScroll = Math.max(0, Math.min(position, detailMost()));
         repaint();
+    }
+
+    /** How far the entry's text can scroll: as far as its bottom coming into view. */
+    private int detailMost() {
+        return Math.max(0, detailHeight - (getHeight() - BOTTOM - (TOP + 26)) + 10);
+    }
+
+    int detailScroll() {
+        return detailScroll;
     }
 
     private int detailLeft() {
@@ -503,9 +521,9 @@ final class DocsView extends JComponent {
         g.dispose();
 
         detailHeight = y + detailScroll - top;
-        int room = bottom - top;
-        int most = Math.max(0, detailHeight - room + 10);
+        int most = detailMost();
         if (detailScroll > most) {
+            // Only when the window has grown taller since the scroll: take up the slack.
             detailScroll = most;
             repaint();
         }
