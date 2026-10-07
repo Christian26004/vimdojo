@@ -37,7 +37,7 @@ public final class App {
     private final ReplayView replayView = new ReplayView(this);
     private final JComponent replayOverlay = replayView.overlay();
     private final StatusBar statusBar = new StatusBar(this);
-    private final EraseDialog eraseDialog = new EraseDialog(this);
+    private final Dialog dialog = new Dialog(this);
     private final Guide guide;
     // The screen underneath the docs, which gets the keyboard back when they close.
     private JComponent focused = challengeView;
@@ -92,7 +92,7 @@ public final class App {
         };
         stack.setLayout(new OverlayLayout(stack));
         stack.setOpaque(false);
-        stack.add(eraseDialog);
+        stack.add(dialog);
         stack.add(docsOverlay);
         stack.add(replayOverlay);
         stack.add(screen);
@@ -308,18 +308,49 @@ public final class App {
         refresh();
     }
 
-    /** Asks for the data folder's location before erasing; see {@link EraseDialog}. */
+    /** Asks for the data folder's location to be typed out in full before erasing. */
     void askToErase() {
-        eraseDialog.open();
+        String folder = DataFolder.shown();
+        String full = DataFolder.current().toString();
+        dialog.open(new Dialog.Spec("erase", "Erase all progress?",
+                "Erasing data will revert all lesson progression. This can't be undone.",
+                "To confirm, type the location of your vimdojo data:", folder, "",
+                "Erase progress", text -> text.strip().equals(folder) || text.strip().equals(full),
+                text -> {
+                    eraseProgress();
+                    return null;
+                }));
     }
 
-    boolean eraseOpen() {
-        return eraseDialog.isVisible();
+    /** Asks where to move the data folder to, starting from where it is now. */
+    void askToMove() {
+        String folder = DataFolder.shown();
+        dialog.open(new Dialog.Spec("move", "Move your data",
+                "Your settings and results are kept in " + folder + ". Type another folder and"
+                        + " they will move there, and stay there from now on.",
+                "New folder:", null, folder, "Move",
+                text -> !text.isBlank() && !DataFolder.current().equals(DataFolder.parse(text)),
+                text -> {
+                    String problem = DataFolder.move(text);
+                    if (problem == null) {
+                        message = "Data moved to " + DataFolder.shown();
+                    }
+                    return problem;
+                }));
     }
 
-    /** What has been typed into the erase dialog so far. */
-    String eraseTyped() {
-        return eraseDialog.typed();
+    boolean dialogOpen() {
+        return dialog.isVisible();
+    }
+
+    /** What the open dialog is for, as the bottom bar names it. */
+    String dialogMode() {
+        return dialog.mode();
+    }
+
+    /** What has been typed into the dialog so far. */
+    String dialogTyped() {
+        return dialog.typed();
     }
 
     /**
@@ -384,7 +415,7 @@ public final class App {
         focused = focus;
         // A message belongs to the screen it was given on.
         message = null;
-        eraseDialog.setVisible(false);
+        dialog.setVisible(false);
         docsOverlay.setVisible(false);
         replayOverlay.setVisible(false);
         cards.show(deck, name);
@@ -497,19 +528,29 @@ public final class App {
             }
             return true;
         }
-        if (eraseDialog.isVisible()) {
+        if (dialog.isVisible()) {
             // The dialog has the keyboard to itself: typing goes into its field.
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 switch (e.getKeyCode()) {
-                    case KeyEvent.VK_ENTER -> eraseDialog.confirm();
-                    case KeyEvent.VK_ESCAPE -> eraseDialog.close();
-                    case KeyEvent.VK_BACK_SPACE -> eraseDialog.backspace();
+                    case KeyEvent.VK_ENTER -> dialog.confirm();
+                    case KeyEvent.VK_ESCAPE -> dialog.close();
+                    case KeyEvent.VK_BACK_SPACE -> dialog.backspace();
+                    case KeyEvent.VK_DELETE -> dialog.delete();
+                    case KeyEvent.VK_LEFT -> dialog.moveCaret(dialog.caret() - 1);
+                    case KeyEvent.VK_RIGHT -> dialog.moveCaret(dialog.caret() + 1);
+                    case KeyEvent.VK_HOME -> dialog.moveCaret(0);
+                    case KeyEvent.VK_END -> dialog.moveCaret(Integer.MAX_VALUE);
+                    case KeyEvent.VK_V -> {
+                        if (e.isControlDown() || e.isMetaDown()) {
+                            dialog.paste();
+                        }
+                    }
                     default -> {
                     }
                 }
             } else if (e.getID() == KeyEvent.KEY_TYPED && e.getKeyChar() >= 32
                     && e.getKeyChar() != 127 && !e.isControlDown() && !e.isMetaDown()) {
-                eraseDialog.type(e.getKeyChar());
+                dialog.type(e.getKeyChar());
             }
             return true;
         }

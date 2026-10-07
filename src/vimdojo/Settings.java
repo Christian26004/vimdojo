@@ -17,24 +17,25 @@ final class Settings {
     /** The first-run tour has been seen to the end or skipped. */
     boolean finishedGuide;
 
-    private final Path file;
-
-    private Settings(Path file) {
-        this.file = file;
+    private Settings() {
     }
 
-    /** Everything the app stores lives here; override with -Dvimdojo.dir=... */
+    /** Everything the app stores lives here; see {@link DataFolder}. */
     static Path dataDir() {
-        String override = System.getProperty("vimdojo.dir");
-        return override != null ? Path.of(override)
-                : Path.of(System.getProperty("user.home"), ".vimdojo");
+        return DataFolder.current();
+    }
+
+    /** Looked up each time, so the settings follow the data folder when it moves. */
+    private static Path file() {
+        return dataDir().resolve("settings.properties");
     }
 
     static Settings load() {
-        Settings s = new Settings(dataDir().resolve("settings.properties"));
-        if (Files.exists(s.file)) {
+        Settings s = new Settings();
+        Path file = file();
+        if (Files.exists(file)) {
             Properties p = new Properties();
-            try (Reader in = Files.newBufferedReader(s.file)) {
+            try (Reader in = Files.newBufferedReader(file)) {
                 p.load(in);
                 s.theme = p.getProperty("theme", s.theme);
                 s.dvorak = Boolean.parseBoolean(p.getProperty("dvorak"));
@@ -57,6 +58,7 @@ final class Settings {
         p.setProperty("lesson", Lessons.ALL.get(lesson).id());
         p.setProperty("dvorak", Boolean.toString(dvorak));
         p.setProperty("finished_guide", Boolean.toString(finishedGuide));
+        Path file = file();
         try {
             Files.createDirectories(file.getParent());
             try (Writer out = Files.newBufferedWriter(file)) {

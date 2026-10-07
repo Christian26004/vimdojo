@@ -18,6 +18,7 @@ public final class LessonTest {
         vimBasics();
         scoring();
         activity();
+        dataFolder();
         System.out.println("ok - " + checks + " checks passed");
     }
 
@@ -249,6 +250,52 @@ public final class LessonTest {
                 "days follow the local clock");
         check(Activity.level(0) == 0 && Activity.level(1) == 1 && Activity.level(5) == 3
                 && Activity.level(40) == 4, "shade levels");
+    }
+
+    /** Moving the data folder, with a pretend home folder so nothing real is touched. */
+    private static void dataFolder() {
+        String realHome = System.getProperty("user.home");
+        try {
+            java.nio.file.Path home = java.nio.file.Files.createTempDirectory("vimdojo-home");
+            System.setProperty("user.home", home.toString());
+            check(DataFolder.current().equals(home.resolve(".vimdojo"))
+                    && !java.nio.file.Files.exists(DataFolder.pointer()),
+                    "the folder starts at ~/.vimdojo");
+            java.nio.file.Files.createDirectories(DataFolder.current());
+            java.nio.file.Files.writeString(DataFolder.current().resolve("history.tsv"), "x\n");
+            if (java.io.File.separatorChar == '/') {
+                check(DataFolder.shown().equals("~/.vimdojo")
+                        && DataFolder.parse("~/a/b").equals(home.resolve("a/b")),
+                        "~ stands for the home folder");
+            }
+            check(DataFolder.move("not/a/full/path") != null, "relative paths are refused");
+            check(DataFolder.move(DataFolder.current().toString()) != null,
+                    "moving onto itself is refused");
+
+            java.nio.file.Path sync = home.resolve("sync").resolve("vimdojo");
+            check(DataFolder.move(sync.toString()) == null, "a move to a new folder works");
+            check(DataFolder.current().equals(sync)
+                    && java.nio.file.Files.exists(sync.resolve("history.tsv"))
+                    && !java.nio.file.Files.exists(home.resolve(".vimdojo")),
+                    "the files move and the old folder goes");
+            check(java.nio.file.Files.readString(DataFolder.pointer()).strip()
+                    .equals(sync.toString()), "the new place is remembered");
+
+            java.nio.file.Path taken = home.resolve("taken");
+            java.nio.file.Files.createDirectories(taken);
+            java.nio.file.Files.writeString(taken.resolve("settings.properties"), "");
+            check(DataFolder.move(taken.toString()) != null && DataFolder.current().equals(sync),
+                    "a folder with vimdojo data already in it is refused");
+
+            check(DataFolder.move(home.resolve(".vimdojo").toString()) == null
+                    && DataFolder.current().equals(home.resolve(".vimdojo"))
+                    && !java.nio.file.Files.exists(DataFolder.pointer()),
+                    "moving back home forgets the pointer");
+        } catch (java.io.IOException e) {
+            throw new AssertionError(e);
+        } finally {
+            System.setProperty("user.home", realHome);
+        }
     }
 
     private static void same(String text, int row, int col, String keys, String wantText,

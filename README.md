@@ -137,6 +137,10 @@ no `:` commands, macros, or marks, and `/` searches for literal text.
 Results and settings are plain text files in a `.vimdojo` folder in your home directory:
 `~/.vimdojo` on macOS, `C:\Users\<you>\.vimdojo` on Windows. Delete the folder to start fresh.
 
+To keep them somewhere else, for example a synced folder, choose **Data folder** in settings
+and type the new location; the files move there. vimdojo then remembers the place in a
+one-line file, `~/.vimdojo-location`, which goes away again if you move the folder back home.
+
 ## Tests
 
 ```

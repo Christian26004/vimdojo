@@ -213,30 +213,85 @@ public final class NavTest {
         for (java.awt.event.KeyListener l : view.getKeyListeners()) {
             l.keyPressed(enter);
         }
-        check(app.eraseOpen() && app.eraseTyped().isEmpty(), "enter on erase opens the dialog");
+        check(app.dialogOpen() && app.dialogTyped().isEmpty(), "enter on erase opens the dialog");
 
         type(":q");
-        check(app.eraseOpen() && app.eraseTyped().equals(":q") && app.command() == null,
+        check(app.dialogOpen() && app.dialogTyped().equals(":q") && app.command() == null,
                 "while it is open, keys type into its field, even : and q");
         press(KeyEvent.VK_ENTER);
-        check(app.eraseOpen() && app.history().all().size() == runs,
+        check(app.dialogOpen() && app.history().all().size() == runs,
                 "enter does nothing until the location is typed");
         press(KeyEvent.VK_ESCAPE);
-        check(!app.eraseOpen() && app.history().all().size() == runs, "escape cancels");
+        check(!app.dialogOpen() && app.history().all().size() == runs, "escape cancels");
 
         app.askToErase();
-        String location = EraseDialog.folder();
+        String location = DataFolder.shown();
         type(location.substring(0, location.length() - 1));
         press(KeyEvent.VK_ENTER);
-        check(app.eraseOpen() && app.history().all().size() == runs, "almost isn't enough");
+        check(app.dialogOpen() && app.history().all().size() == runs, "almost isn't enough");
         press(KeyEvent.VK_BACK_SPACE);
         type(location.substring(location.length() - 2));
-        check(app.eraseTyped().equals(location), "backspace corrects a mistake");
+        check(app.dialogTyped().equals(location), "backspace corrects a mistake");
         press(KeyEvent.VK_ENTER);
-        check(!app.eraseOpen() && app.history().all().isEmpty()
+        check(!app.dialogOpen() && app.history().all().isEmpty()
                 && app.message().equals("Progress erased"), "the full location erases");
         app.showLessons();
         check(app.message() == null, "the message goes once another screen opens");
+        moveFolder();
+    }
+
+    /** The data folder can be moved by typing a new place; everything goes with it. */
+    private static void moveFolder() {
+        java.nio.file.Path from = DataFolder.current();
+        java.nio.file.Path to = from.resolveSibling(from.getFileName() + "-moved");
+        app.setTheme("moss");
+        check(java.nio.file.Files.exists(from.resolve("settings.properties")), "settings saved");
+
+        app.askToMove();
+        check(app.dialogOpen() && app.dialogMode().equals("move")
+                && app.dialogTyped().equals(DataFolder.shown()),
+                "the move dialog starts from where the folder is now");
+        press(KeyEvent.VK_ENTER);
+        check(app.dialogOpen() && DataFolder.current().equals(from),
+                "enter does nothing while it still names the same folder");
+        for (int i = 0; i < 40; i++) {
+            press(KeyEvent.VK_BACK_SPACE);
+        }
+        type("relative/folder");
+        press(KeyEvent.VK_HOME);
+        press(KeyEvent.VK_DELETE);
+        check(app.dialogTyped().startsWith("elative") || app.dialogTyped().isEmpty(),
+                "home and delete edit the start of the field");
+        press(KeyEvent.VK_END);
+        press(KeyEvent.VK_ENTER);
+        check(app.dialogOpen() && DataFolder.current().equals(from),
+                "a path that isn't a full one is refused");
+        press(KeyEvent.VK_ESCAPE);
+
+        app.askToMove();
+        for (int i = 0; i < DataFolder.shown().length(); i++) {
+            press(KeyEvent.VK_BACK_SPACE);
+        }
+        type(to.toString());
+        press(KeyEvent.VK_ENTER);
+        check(!app.dialogOpen() && DataFolder.current().equals(to)
+                && app.message().startsWith("Data moved to"), "a full path moves it");
+        check(java.nio.file.Files.exists(to.resolve("settings.properties"))
+                && !java.nio.file.Files.exists(from.resolve("settings.properties")),
+                "the files go with it");
+        app.setTheme("ink");
+        check(Settings.load().theme.equals("ink"), "and the app keeps using the new place");
+
+        app.askToMove();
+        for (int i = 0; i < 200; i++) {
+            press(KeyEvent.VK_BACK_SPACE);
+        }
+        type(from.toString());
+        press(KeyEvent.VK_ENTER);
+        check(DataFolder.current().equals(from)
+                && java.nio.file.Files.exists(from.resolve("settings.properties")),
+                "and it can move back");
+        app.showSettings();
     }
 
     private static void dvorakLayout() {

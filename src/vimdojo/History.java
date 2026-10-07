@@ -43,21 +43,25 @@ final class History {
         }
     }
 
-    private final Path file;
-    private final Path taskFile;
     private final List<Attempt> attempts = new ArrayList<>();
     private final List<TaskResult> tasks = new ArrayList<>();
 
-    private History(Path file, Path taskFile) {
-        this.file = file;
-        this.taskFile = taskFile;
+    private History() {
+    }
+
+    // Looked up each time, so the history follows the data folder when it moves.
+    private static Path file() {
+        return Settings.dataDir().resolve("history.tsv");
+    }
+
+    private static Path taskFile() {
+        return Settings.dataDir().resolve("tasks.tsv");
     }
 
     static History load() {
-        History h = new History(Settings.dataDir().resolve("history.tsv"),
-                Settings.dataDir().resolve("tasks.tsv"));
-        read(h.file, Attempt::fromLine, h.attempts);
-        read(h.taskFile, TaskResult::fromLine, h.tasks);
+        History h = new History();
+        read(file(), Attempt::fromLine, h.attempts);
+        read(taskFile(), TaskResult::fromLine, h.tasks);
         return h;
     }
 
@@ -136,8 +140,8 @@ final class History {
         attempts.clear();
         tasks.clear();
         try {
-            Files.deleteIfExists(file);
-            Files.deleteIfExists(taskFile);
+            Files.deleteIfExists(file());
+            Files.deleteIfExists(taskFile());
         } catch (IOException e) {
             System.err.println("vimdojo: could not erase history: " + e.getMessage());
         }
@@ -146,8 +150,8 @@ final class History {
     void add(Attempt attempt, List<TaskResult> results) {
         attempts.add(attempt);
         tasks.addAll(results);
-        append(file, List.of(attempt.toLine()));
-        append(taskFile, results.stream().map(TaskResult::toLine).toList());
+        append(file(), List.of(attempt.toLine()));
+        append(taskFile(), results.stream().map(TaskResult::toLine).toList());
     }
 
     private static void append(Path file, List<String> lines) {

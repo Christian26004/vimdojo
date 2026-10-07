@@ -15,7 +15,9 @@ import javax.swing.JComponent;
 /** Options, plus a reference for getting around the app from the keyboard. */
 final class SettingsView extends JComponent {
     private static final int ROW = 42;
-    private static final int ROWS = 3;
+    private static final int ROWS = 4;
+    private static final int FOLDER = 2;
+    private static final int ERASE = 3;
     private static final String[][] REFERENCE = {
         {":docs", "every key, with examples"},
         {":lessons", "the lesson list"},
@@ -141,6 +143,8 @@ final class SettingsView extends JComponent {
     private void activate() {
         if (selected < 2) {
             change(1);
+        } else if (selected == FOLDER) {
+            app.askToMove();
         } else if (!app.history().all().isEmpty()) {
             // Erasing can't be undone, so it asks for the data folder to be typed out first.
             app.askToErase();
@@ -162,15 +166,11 @@ final class SettingsView extends JComponent {
         for (int row = 0; row < ROWS; row++) {
             int rowY = y + row * ROW;
             int clicked = row;
-            // Clicking a row selects it; clicking the erase row also presses it.
+            // Clicking a row selects it; clicking the folder or erase row also presses it.
             hotspots.add(new Hotspot(new Rectangle(left, rowY, width, ROW - 6), () -> {
-                if (clicked == 2 && selected == 2) {
+                select(clicked);
+                if (clicked >= FOLDER) {
                     activate();
-                } else {
-                    select(clicked);
-                    if (clicked == 2) {
-                        activate();
-                    }
                 }
             }));
             if (row == selected) {
@@ -181,8 +181,8 @@ final class SettingsView extends JComponent {
             int baseline = rowY + 24;
             g.setFont(row == selected ? Theme.bold(15f) : Theme.ui(15f));
             g.setColor(t.text());
-            g.drawString(new String[] {"Theme", "Keyboard layout", "Erase progress"}[row],
-                    left + 20, baseline);
+            g.drawString(new String[] {"Theme", "Keyboard layout", "Data folder",
+                "Erase progress"}[row], left + 20, baseline);
             int x = left + 220;
             if (row < 2) {
                 String[] choices = row == 0
@@ -215,12 +215,17 @@ final class SettingsView extends JComponent {
                     g.setColor(t.sub());
                     g.drawString("assumes your system is set to QWERTY", x + 16, baseline);
                 }
+            } else if (row == FOLDER) {
+                g.setFont(Theme.mono(14f));
+                g.setColor(t.text());
+                g.drawString(DataFolder.shown(), x, baseline);
+                Paint.prose(g, "`enter` to move it", x + g.getFontMetrics().stringWidth(
+                        DataFolder.shown()) + 20, baseline, 13f, t.sub());
             } else {
                 g.setFont(Theme.ui(15f));
                 g.setColor(t.sub());
-                g.drawString((runs == 0 ? "Nothing recorded yet" : runs + (runs == 1 ? " run"
-                        : " runs") + " recorded") + ", kept in " + EraseDialog.folder(), x,
-                        baseline);
+                g.drawString(runs == 0 ? "Nothing recorded yet"
+                        : runs + (runs == 1 ? " run" : " runs") + " recorded", x, baseline);
             }
         }
         y += ROWS * ROW + 30;
