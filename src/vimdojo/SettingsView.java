@@ -210,17 +210,10 @@ final class SettingsView extends JComponent {
                             }));
                     x += nameWidth + 28;
                 }
-                if (row == 1) {
-                    g.setFont(Theme.ui(13f));
-                    g.setColor(t.sub());
-                    g.drawString("assumes your system is set to QWERTY", x + 16, baseline);
-                }
             } else if (row == FOLDER) {
                 g.setFont(Theme.mono(14f));
                 g.setColor(t.text());
                 g.drawString(DataFolder.shown(), x, baseline);
-                Paint.prose(g, "`enter` to choose another place", x + g.getFontMetrics()
-                        .stringWidth(DataFolder.shown()) + 20, baseline, 13f, t.sub());
             } else {
                 g.setFont(Theme.ui(15f));
                 g.setColor(t.sub());
