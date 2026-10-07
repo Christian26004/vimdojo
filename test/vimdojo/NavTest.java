@@ -177,7 +177,7 @@ public final class NavTest {
         pressOn(view, KeyEvent.VK_ENTER);
         check(app.lessonIndex() == 1 && !app.inIntro(), "lesson 2 can be played now");
 
-        app.eraseProgress();
+        eraseDialog();
         check(!app.unlocked(1) && app.lessonIndex() == 0,
                 "erasing locks the lessons again and goes back to lesson 1");
 
@@ -189,6 +189,52 @@ public final class NavTest {
             check(app.unlocked(i), "passing every lesson unlocks " + Lessons.ALL.get(i).id());
         }
         command("1");
+    }
+
+    /** Erasing asks for the data folder's location to be typed out, as GitHub does. */
+    private static void eraseDialog() {
+        int runs = app.history().all().size();
+        check(runs > 0, "something to erase");
+        command("settings");
+        SettingsView view = null;
+        java.util.ArrayDeque<java.awt.Component> queue = new java.util.ArrayDeque<>();
+        queue.add(app.root());
+        while (!queue.isEmpty()) {
+            java.awt.Component c = queue.poll();
+            if (c instanceof SettingsView v) {
+                view = v;
+            } else if (c instanceof java.awt.Container k) {
+                queue.addAll(java.util.List.of(k.getComponents()));
+            }
+        }
+        type("G");
+        KeyEvent enter = new KeyEvent(SOURCE, KeyEvent.KEY_PRESSED, 0, 0, KeyEvent.VK_ENTER,
+                KeyEvent.CHAR_UNDEFINED);
+        for (java.awt.event.KeyListener l : view.getKeyListeners()) {
+            l.keyPressed(enter);
+        }
+        check(app.eraseOpen() && app.eraseTyped().isEmpty(), "enter on erase opens the dialog");
+
+        type(":q");
+        check(app.eraseOpen() && app.eraseTyped().equals(":q") && app.command() == null,
+                "while it is open, keys type into its field, even : and q");
+        press(KeyEvent.VK_ENTER);
+        check(app.eraseOpen() && app.history().all().size() == runs,
+                "enter does nothing until the location is typed");
+        press(KeyEvent.VK_ESCAPE);
+        check(!app.eraseOpen() && app.history().all().size() == runs, "escape cancels");
+
+        app.askToErase();
+        String location = EraseDialog.folder();
+        type(location.substring(0, location.length() - 1));
+        press(KeyEvent.VK_ENTER);
+        check(app.eraseOpen() && app.history().all().size() == runs, "almost isn't enough");
+        press(KeyEvent.VK_BACK_SPACE);
+        type(location.substring(location.length() - 2));
+        check(app.eraseTyped().equals(location), "backspace corrects a mistake");
+        press(KeyEvent.VK_ENTER);
+        check(!app.eraseOpen() && app.history().all().isEmpty()
+                && app.message().equals("Progress erased"), "the full location erases");
     }
 
     private static void dvorakLayout() {

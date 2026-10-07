@@ -781,7 +781,9 @@ final class Docs {
                 + "and time in each, and a calendar of the days you practiced."},
         {"commands", ":settings", "theme, keyboard layout, erase progress",
             "Opens the settings: the color theme, the keyboard layout, and a button to erase "
-                + "all your results.",
+                + "all your results. Erasing can't be undone, so it opens a box asking you to "
+                + "type the location of your vimdojo data, such as ~/.vimdojo, before it "
+                + "goes ahead.",
             "`:set` `:help` `:h` open it too"},
         {"commands", ":lesson  :ready", "back to the current lesson",
             "Returns from any screen to the lesson you were on. A lesson part way through "
@@ -840,13 +842,13 @@ final class Docs {
             "What `enter` does depends on the screen.",
             "ready screen: begin the lesson", "results: on to the next lesson",
             "lessons: start the selected one", "stats: back to the lesson",
-            "settings: change the option; erasing takes two"},
+            "settings: change the option, or start an erase"},
         {"moving around the app", "tab", "restart the lesson",
             "During a lesson, starts it again with fresh tasks.",
             "on the results screen: try again"},
         {"moving around the app", "esc", "close or go back",
             "Outside a lesson's text, `esc` closes whatever is open or goes back a step.",
-            "docs: close them", "stats: back to the lesson", "settings: cancel an erase"},
+            "docs: close them", "stats: back to the lesson", "erase dialog: cancel"},
         {"moving around the app", "q", "close the docs",
             "Closes this manual and returns to the screen underneath.",
             "`esc` and `:q` close them too"},
@@ -889,7 +891,7 @@ final class Docs {
             "Everything can be done from the keyboard, but the mouse works too.",
             "the logo restarts the current lesson",
             "bottom bar: docs, lessons, stats, settings",
-            "lessons: click one to start it", "settings: click a choice; erasing takes two",
+            "lessons: click one to start it", "settings: click a choice",
             "docs: click a key to see it"},
         {"mouse", "scroll", "the wheel scrolls anything longer than the window",
             "Turn the mouse wheel, or swipe on a trackpad, over anything too long for the "

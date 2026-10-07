@@ -85,6 +85,8 @@ final class StatusBar extends JPanel {
         if (app.command() != null) {
             mode = app.prompt() == '/' ? "search" : "command";
             block = t.accent();
+        } else if (app.eraseOpen()) {
+            mode = "erase";
         } else if (app.docsOpen()) {
             mode = "docs";
         } else if (app.replayOpen()) {
@@ -136,7 +138,8 @@ final class StatusBar extends JPanel {
             x += g.getFontMetrics().stringWidth(app.docsStatus()) + 22;
             g.setFont(Theme.ui(12.5f));
         }
-        String hints = app.docsOpen()
+        String hints = app.eraseOpen() ? "type the location   `enter` erase   `esc` cancel"
+                : app.docsOpen()
                 ? "`/` search   `n` `N` next match   `q` close   `j` `k` move   `d` `u` scroll text"
                         + "   `space` `b` page"
                 : app.replayOpen() ? "`q` close   `j` `k` other tasks"

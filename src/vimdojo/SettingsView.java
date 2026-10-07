@@ -43,7 +43,6 @@ final class SettingsView extends JComponent {
     // Rebuilt on every paint, so the clickable areas always match what is drawn.
     private final List<Hotspot> hotspots = new ArrayList<>();
     private int selected;
-    private boolean confirmErase;
     private int scroll;
     private int contentHeight;
 
@@ -60,7 +59,6 @@ final class SettingsView extends JComponent {
                     case KeyEvent.VK_RIGHT -> change(1);
                     case KeyEvent.VK_LEFT -> change(-1);
                     case KeyEvent.VK_ENTER -> activate();
-                    case KeyEvent.VK_ESCAPE -> select(selected);
                     default -> {
                     }
                 }
@@ -120,10 +118,8 @@ final class SettingsView extends JComponent {
         return null;
     }
 
-    /** Moving the selection also cancels a pending erase. */
     void select(int row) {
         selected = Math.max(0, Math.min(row, ROWS - 1));
-        confirmErase = false;
         repaint();
     }
 
@@ -145,13 +141,9 @@ final class SettingsView extends JComponent {
     private void activate() {
         if (selected < 2) {
             change(1);
-        } else if (confirmErase) {
-            confirmErase = false;
-            app.eraseProgress();
         } else if (!app.history().all().isEmpty()) {
-            // Erasing can't be undone, so it takes a second press.
-            confirmErase = true;
-            repaint();
+            // Erasing can't be undone, so it asks for the data folder to be typed out first.
+            app.askToErase();
         }
     }
 
@@ -224,11 +216,11 @@ final class SettingsView extends JComponent {
                     g.drawString("assumes your system is set to QWERTY", x + 16, baseline);
                 }
             } else {
-                g.setFont(confirmErase ? Theme.bold(15f) : Theme.ui(15f));
-                g.setColor(confirmErase ? t.accent() : t.sub());
-                g.drawString(confirmErase ? "Press enter again to erase all " + runs + " runs."
-                        : (runs == 0 ? "Nothing recorded yet" : runs + (runs == 1 ? " run" : " runs")
-                        + " recorded") + ", kept in " + Settings.dataDir(), x, baseline);
+                g.setFont(Theme.ui(15f));
+                g.setColor(t.sub());
+                g.drawString((runs == 0 ? "Nothing recorded yet" : runs + (runs == 1 ? " run"
+                        : " runs") + " recorded") + ", kept in " + EraseDialog.folder(), x,
+                        baseline);
             }
         }
         y += ROWS * ROW + 30;

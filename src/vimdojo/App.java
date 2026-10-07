@@ -37,6 +37,7 @@ public final class App {
     private final ReplayView replayView = new ReplayView(this);
     private final JComponent replayOverlay = replayView.overlay();
     private final StatusBar statusBar = new StatusBar(this);
+    private final EraseDialog eraseDialog = new EraseDialog(this);
     private final Guide guide;
     // The screen underneath the docs, which gets the keyboard back when they close.
     private JComponent focused = challengeView;
@@ -91,6 +92,7 @@ public final class App {
         };
         stack.setLayout(new OverlayLayout(stack));
         stack.setOpaque(false);
+        stack.add(eraseDialog);
         stack.add(docsOverlay);
         stack.add(replayOverlay);
         stack.add(screen);
@@ -302,7 +304,22 @@ public final class App {
         if (!unlocked(settings.lesson)) {
             prepare(0, false);
         }
+        message = "Progress erased";
         refresh();
+    }
+
+    /** Asks for the data folder's location before erasing; see {@link EraseDialog}. */
+    void askToErase() {
+        eraseDialog.open();
+    }
+
+    boolean eraseOpen() {
+        return eraseDialog.isVisible();
+    }
+
+    /** What has been typed into the erase dialog so far. */
+    String eraseTyped() {
+        return eraseDialog.typed();
     }
 
     /**
@@ -365,6 +382,7 @@ public final class App {
     private void show(String name, JComponent focus) {
         card = name;
         focused = focus;
+        eraseDialog.setVisible(false);
         docsOverlay.setVisible(false);
         replayOverlay.setVisible(false);
         cards.show(deck, name);
@@ -472,6 +490,22 @@ public final class App {
                     default -> {
                     }
                 }
+            }
+            return true;
+        }
+        if (eraseDialog.isVisible()) {
+            // The dialog has the keyboard to itself: typing goes into its field.
+            if (e.getID() == KeyEvent.KEY_PRESSED) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_ENTER -> eraseDialog.confirm();
+                    case KeyEvent.VK_ESCAPE -> eraseDialog.close();
+                    case KeyEvent.VK_BACK_SPACE -> eraseDialog.backspace();
+                    default -> {
+                    }
+                }
+            } else if (e.getID() == KeyEvent.KEY_TYPED && e.getKeyChar() >= 32
+                    && e.getKeyChar() != 127 && !e.isControlDown() && !e.isMetaDown()) {
+                eraseDialog.type(e.getKeyChar());
             }
             return true;
         }

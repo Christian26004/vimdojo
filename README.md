@@ -111,7 +111,8 @@ and `N` move between matches, `d` and `u` scroll a long entry, and `q`, `esc` or
 without quitting the app.
 
 The settings screen lists these too, and holds the theme, the keyboard layout and an option to
-erase progress.
+erase progress. Erasing asks you to type the location of your data folder (`~/.vimdojo`) first,
+the way GitHub asks for a repository's name before deleting it.
 
 The stats screen includes an activity calendar: a year of days shaded by how many lessons you
 finished on each, with your current and longest streak of consecutive days.
